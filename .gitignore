@@ -1,0 +1,44 @@
+# Ignore IDE-specific folders
+.vscode/
+.idea/
+*.iml
+
+# Ignore node_modules if it's a JS project
+node_modules/
+
+# Ignore compiled files (Java/Python/C)
+*.class
+*.pyc
+*.exe
+*.out
+*.jar
+*.log
+
+# Ignore backup files
+*.bak
+*.tmp
+
+# Maven
+target/
+
+# IDEs
+.metadata/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+
+# Claude Code local settings
+.claude/
+
+# gitingest / repo dumps
+shreyas-2321-sp-8a5edab282632443.txt
+
+Final year pd2.pdf
+Project Proposal.docx
