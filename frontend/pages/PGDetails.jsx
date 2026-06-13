@@ -8,11 +8,16 @@ import {
   MapPin,
   ArrowLeft,
   Bookmark,
-  Home,
+  ImageOff,
   ChevronLeft,
   ChevronRight,
+  Check,
+  X,
 } from "lucide-react";
+import TearStrip from "../components/TearStrip.jsx";
 import { pgApi, ApiError } from "../src/lib/api.js";
+
+const inr = (n) => Number(n).toLocaleString("en-IN");
 
 export default function PGDetails() {
   const { id } = useParams();
@@ -31,7 +36,7 @@ export default function PGDetails() {
       .then((data) => active && (setPg(data), setError("")))
       .catch((err) => {
         if (!active) return;
-        if (err instanceof ApiError && err.status === 404) setError("PG not found");
+        if (err instanceof ApiError && err.status === 404) setError("This flyer was torn off — PG not found.");
         else setError("Could not load this PG. Is the backend running?");
       })
       .finally(() => active && setLoading(false));
@@ -41,175 +46,220 @@ export default function PGDetails() {
   }, [id]);
 
   if (loading) {
-    return <div className="text-gray-600 text-center mt-20 text-xl">Loading…</div>;
+    return <p className="mono-label text-faded text-center mt-24">Unpinning the flyer…</p>;
   }
 
   if (error || !pg) {
-    return <div className="text-gray-700 text-center mt-20 text-xl">{error || "PG not found"}</div>;
+    return (
+      <div className="max-w-md mx-auto mt-24 mb-12 border-2 border-ink bg-flyer p-8 text-center">
+        <p className="disp text-2xl mb-2">Not on the board</p>
+        <p className="text-faded text-sm">{error || "PG not found"}</p>
+      </div>
+    );
   }
 
   const images = pg.imageUrls || [];
 
-  const amenities = [];
-  if (pg.wifiAvailable) amenities.push("WiFi");
-  if (pg.foodProvided) amenities.push("Food");
-  if (pg.acAvailable) amenities.push("AC");
+  const amenityRows = [
+    ["WiFi", pg.wifiAvailable],
+    ["Food / mess", pg.foodProvided],
+    ["AC rooms", pg.acAvailable],
+  ];
+
+  const tiers = [
+    ["Single", pg.rentSingle],
+    ["Double", pg.rentDouble],
+    ["Triple", pg.rentTriple],
+  ];
 
   return (
-    <div className="min-h-screen bg-white py-10 px-4">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-[#383838] font-semibold"
-        >
-          <ArrowLeft size={18} />
-          Back to listings
-        </button>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* back */}
+      <button
+        onClick={() => navigate(-1)}
+        className="mono-label text-faded hover:text-ink transition-colors inline-flex items-center gap-2 mb-8 bg-transparent border-0 cursor-pointer p-0"
+      >
+        <ArrowLeft size={15} aria-hidden="true" />
+        Back to the board
+      </button>
 
-        {/* Photos */}
-        <div className="relative rounded-xl overflow-hidden">
-          {images.length > 0 ? (
-            <img
-              src={images[currentImage]}
-              alt={pg.name}
-              className="w-full h-[400px] object-cover"
-            />
-          ) : (
-            <div className="w-full h-[400px] bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
-              <Home className="w-20 h-20 text-gray-600" />
+      {/* title row */}
+      <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4 mb-8">
+        <div className="max-w-2xl">
+          <p className="mono-label text-green-deep mb-2">Flyer № {pg.id}</p>
+          <h1 className="disp text-4xl md:text-6xl mb-3">{pg.name}</h1>
+          <p className="mono-data text-sm text-faded flex items-start gap-2">
+            <MapPin size={15} className="mt-0.5 flex-none" aria-hidden="true" />
+            {pg.address}
+          </p>
+          {pg.landmark && (
+            <p className="mono-data text-sm text-green-deep mt-1.5 pl-6">↳ near {pg.landmark}</p>
+          )}
+          {(pg.gender || pg.availableRooms != null) && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {pg.gender && (
+                <span className="plate plate-vacant !rotate-0 capitalize">For {pg.gender}</span>
+              )}
+              {pg.availableRooms != null && (
+                <span className="plate !rotate-0 bg-flyer">
+                  {pg.availableRooms} room{pg.availableRooms === 1 ? "" : "s"} available
+                </span>
+              )}
             </div>
           )}
+        </div>
+
+        <div className="text-right">
+          <p className="mono-label text-faded">From</p>
+          <p className="disp text-5xl text-green-deep">₹{inr(pg.rentSingle)}</p>
+          <p className="mono-label text-faded mt-1">per month · single</p>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-[1.6fr_1fr] gap-8 items-start">
+        {/* LEFT */}
+        <div className="space-y-8 min-w-0">
+          {/* gallery */}
+          <div className="relative border-2 border-ink bg-board">
+            {images.length > 0 ? (
+              <img
+                src={images[currentImage]}
+                alt={`${pg.name} — photo ${currentImage + 1} of ${images.length}`}
+                className="w-full aspect-[16/10] object-cover"
+              />
+            ) : (
+              <div className="w-full aspect-[16/10] grid place-content-center text-center text-faded">
+                <ImageOff size={32} className="mx-auto mb-3" aria-hidden="true" />
+                <p className="mono-label">No photos on this flyer yet</p>
+              </div>
+            )}
+
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={() => setCurrentImage((i) => (i === 0 ? images.length - 1 : i - 1))}
+                  className="btn btn-icon absolute left-3 top-1/2 -translate-y-1/2"
+                  aria-label="Previous photo"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  onClick={() => setCurrentImage((i) => (i + 1) % images.length)}
+                  className="btn btn-icon absolute right-3 top-1/2 -translate-y-1/2"
+                  aria-label="Next photo"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => setSaved(!saved)}
+              className={`btn btn-icon absolute top-3 right-3 ${saved ? "!bg-green" : ""}`}
+              aria-pressed={saved}
+              aria-label={saved ? "Remove from saved" : "Save this flyer"}
+            >
+              <Bookmark size={18} className={saved ? "fill-ink" : ""} />
+            </button>
+          </div>
 
           {images.length > 1 && (
-            <>
-              <button
-                onClick={() => setCurrentImage((i) => (i === 0 ? images.length - 1 : i - 1))}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 p-2 rounded-full"
-              >
-                <ChevronLeft className="text-white" />
-              </button>
-              <button
-                onClick={() => setCurrentImage((i) => (i + 1) % images.length)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 p-2 rounded-full"
-              >
-                <ChevronRight className="text-white" />
-              </button>
-            </>
+            <div className="flex gap-3 flex-wrap -mt-3">
+              {images.map((url, i) => (
+                <button
+                  key={url}
+                  onClick={() => setCurrentImage(i)}
+                  className={`border-2 w-20 h-16 overflow-hidden cursor-pointer p-0 bg-board transition-colors ${
+                    i === currentImage ? "border-green-deep" : "border-ink/40 hover:border-ink"
+                  }`}
+                  aria-label={`Show photo ${i + 1}`}
+                >
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
           )}
 
-          <button
-            onClick={() => setSaved(!saved)}
-            className="absolute top-4 right-4 bg-black/70 p-2 rounded-full"
-          >
-            <Bookmark
-              className={saved ? "text-[#87E64B] fill-[#87E64B]" : "text-white"}
-            />
-          </button>
-        </div>
-
-        {/* Header Info */}
-        <div className="bg-[#191919] rounded-xl p-6">
-          <div className="flex justify-between flex-wrap gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-white">{pg.name}</h1>
-              <p className="text-gray-400 flex items-center gap-1 mt-1">
-                <MapPin size={16} /> {pg.address}
-              </p>
-              {pg.landmark && (
-                <p className="text-[#87E64B] mt-2 flex items-center gap-1">
-                  <MapPin size={16} /> Near {pg.landmark}
-                </p>
-              )}
-              {(pg.gender || pg.availableRooms != null) && (
-                <div className="flex gap-3 mt-2 text-sm text-gray-300">
-                  {pg.gender && <span className="capitalize">For {pg.gender}</span>}
-                  {pg.availableRooms != null && <span>· {pg.availableRooms} rooms available</span>}
-                </div>
-              )}
-            </div>
-
-            <div className="text-right">
-              <p className="text-3xl font-bold text-[#87E64B]">₹{pg.rentSingle}</p>
-              <p className="text-gray-400">/month (single)</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Rent tiers */}
-            <div className="bg-[#191919] rounded-xl p-6">
-              <h2 className="text-xl font-bold text-white mb-3">Rent</h2>
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="bg-gray-800 rounded-lg py-3">
-                  <p className="text-gray-400 text-sm">Single</p>
-                  <p className="text-white font-semibold">₹{pg.rentSingle}</p>
-                </div>
-                <div className="bg-gray-800 rounded-lg py-3">
-                  <p className="text-gray-400 text-sm">Double</p>
-                  <p className="text-white font-semibold">₹{pg.rentDouble}</p>
-                </div>
-                <div className="bg-gray-800 rounded-lg py-3">
-                  <p className="text-gray-400 text-sm">Triple</p>
-                  <p className="text-white font-semibold">
-                    {pg.rentTriple != null ? `₹${pg.rentTriple}` : "—"}
+          {/* rent tickets */}
+          <section className="border-2 border-ink bg-flyer">
+            <h2 className="mono-label text-faded px-6 pt-5">Rent per month</h2>
+            <div className="grid grid-cols-3 divide-x-2 divide-dashed divide-ink/40 mt-3 border-t-2 border-dashed border-ink/40">
+              {tiers.map(([label, value]) => (
+                <div key={label} className="p-5 md:p-6 text-center">
+                  <p className="mono-label text-faded mb-1.5">{label}</p>
+                  <p className={`disp text-2xl md:text-3xl ${value != null ? "" : "text-faded"}`}>
+                    {value != null ? `₹${inr(value)}` : "—"}
                   </p>
                 </div>
-              </div>
+              ))}
             </div>
+          </section>
 
-            {/* Amenities */}
-            <div className="bg-[#191919] rounded-xl p-6">
-              <h2 className="text-xl font-bold text-white mb-4">Amenities</h2>
-              {amenities.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {amenities.map((item) => (
-                    <div key={item} className="flex items-center gap-2 text-gray-300">
-                      <span className="text-[#87E64B]">✔</span> {item}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">No amenities listed.</p>
+          {/* amenities */}
+          <section className="border-2 border-ink bg-flyer p-6">
+            <h2 className="mono-label text-faded mb-5">On the flyer</h2>
+            <ul className="grid sm:grid-cols-3 gap-3 list-none p-0 m-0">
+              {amenityRows.map(([label, available]) => (
+                <li
+                  key={label}
+                  className={`flex items-center gap-2.5 border-2 px-3.5 py-2.5 ${
+                    available ? "border-ink" : "border-ink/25 text-faded"
+                  }`}
+                >
+                  {available ? (
+                    <Check size={16} className="text-green-deep flex-none" aria-hidden="true" />
+                  ) : (
+                    <X size={16} className="text-red flex-none" aria-hidden="true" />
+                  )}
+                  <span className={`text-sm ${available ? "" : "line-through decoration-2"}`}>{label}</span>
+                  <span className="sr-only">{available ? "available" : "not available"}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mono-data text-xs text-faded mt-4">
+              Laundry, parking and the rest — ask the owner when you call.
+            </p>
+          </section>
+        </div>
+
+        {/* RIGHT — the contact flyer */}
+        <aside className="lg:sticky lg:top-32">
+          <div className="flyer" style={{ "--tilt": "1deg", "--tape-tilt": "-3deg" }}>
+            <span className="tape" aria-hidden="true" />
+            <div className="p-6">
+              <p className="mono-label text-faded mb-1.5">Contact owner</p>
+              <p className="disp text-2xl mb-1">{pg.ownerName}</p>
+              <p className="mono-data text-lg mb-6">{pg.contactNumber}</p>
+
+              <a
+                href={`tel:${pg.contactNumber}`}
+                className="btn btn-green w-full mb-3"
+              >
+                <Phone size={16} aria-hidden="true" /> Call owner
+              </a>
+
+              <a
+                href={`https://wa.me/91${pg.contactNumber}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn w-full"
+              >
+                <MessageCircle size={16} aria-hidden="true" /> WhatsApp
+              </a>
+
+              {pg.alternateContact && (
+                <p className="mono-data text-xs text-faded mt-4 text-center">
+                  Alternate: {pg.alternateContact}
+                </p>
               )}
             </div>
+
+            <TearStrip text={pg.contactNumber} count={5} />
           </div>
-
-          {/* RIGHT - CONTACT */}
-          <div className="bg-[#191919] rounded-xl p-6 h-fit sticky top-20">
-            <h3 className="text-xl font-bold text-white mb-4">Contact Owner</h3>
-
-            <p className="text-gray-300 font-semibold mb-1">{pg.ownerName}</p>
-            <p className="text-gray-400 text-sm mb-4">{pg.contactNumber}</p>
-
-            <a
-              href={`tel:${pg.contactNumber}`}
-              className="w-full flex justify-center items-center gap-2 bg-[#87E64B] text-black py-3 rounded-lg font-semibold mb-3"
-            >
-              <Phone size={18} />
-              Call Owner
-            </a>
-
-            <a
-              href={`https://wa.me/91${pg.contactNumber}`}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full flex justify-center items-center gap-2 border border-[#87E64B] text-[#87E64B] py-3 rounded-lg font-semibold"
-            >
-              <MessageCircle size={18} />
-              WhatsApp
-            </a>
-
-            {pg.alternateContact && (
-              <p className="text-gray-500 text-sm mt-3 text-center">
-                Alt: {pg.alternateContact}
-              </p>
-            )}
-          </div>
-        </div>
+          <p className="mono-data text-[11px] text-faded mt-4 text-center">
+            StayPoint takes no commission. The number above is the owner's own.
+          </p>
+        </aside>
       </div>
     </div>
   );

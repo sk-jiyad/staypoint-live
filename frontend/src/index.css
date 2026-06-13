@@ -1,18 +1,533 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap');
-
+@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Shrikhand&display=swap");
 @import "tailwindcss";
-@import "tailwindcss";
-/* @import "tw-animate-css"; */
 
-@font-face {
-  font-family: "Tiempos Fine";
-  src: url("/public/TestTiemposFine-RegularItalic.otf") format("opentype");
+/* ------------------------------------------------------------------
+   STAYPOINT — "THE NOTICE BOARD"
+   Every wall in town says TO-LET. This UI is that wall, organised.
+   Whitewashed wall · flyer paper · painted-sign type · tear-off tabs
+------------------------------------------------------------------- */
+
+@theme {
+  /* paint + paper */
+  --color-wall: #f1efe6; /* whitewashed wall */
+  --color-flyer: #fcfaf2; /* photocopied flyer paper */
+  --color-board: #e7e4d6; /* recessed board / panels */
+  --color-ink: #1a1812; /* enamel paint black */
+  --color-faded: #5c5a4c; /* sun-faded ink */
+  --color-green: #87e64b; /* StayPoint brand paint */
+  --color-green-deep: #2e6b0f; /* green that passes on paper */
+  --color-tape: #ffd23f; /* packing-tape yellow */
+  --color-red: #de4527; /* HOUSE FULL red */
+  --color-amber: #e9a93b;
+
+  /* type */
+  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Courier Prime", ui-monospace, "Courier New", monospace;
+  --font-accent: "Shrikhand", "Archivo", serif;
 }
 
-*{
-  font-family: "Instrument Sans", sans-serif;
+/* ---------------------------------- base */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-wall);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    /* faint roller-paint streaks on the wall */
+    background-image: linear-gradient(
+      90deg,
+      rgba(26, 24, 18, 0.022) 0 1px,
+      transparent 1px 160px
+    );
+    background-size: 160px 100%;
+  }
+
+  /* film of dust over everything */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::selection {
+    background: var(--color-green);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-green-deep);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-wall);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-ink);
+    border: 3px solid var(--color-wall);
+  }
 }
 
-span{
-  font-family:"Tiempos Fine";
+/* ---------------------------------- type voices */
+
+@layer components {
+  /* painted sign lettering */
+  .disp {
+    font-family: var(--font-sans);
+    font-weight: 900;
+    font-stretch: 118%;
+    text-transform: uppercase;
+    letter-spacing: -0.015em;
+    line-height: 0.94;
+  }
+
+  /* juicy Indian street-lettering accent — use in small doses */
+  .accent {
+    font-family: var(--font-accent);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.1;
+  }
+
+  /* photocopied-flyer microcopy */
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+
+  .mono-data {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* crossed out, like an old rate painted over */
+  .struck {
+    text-decoration: line-through;
+    text-decoration-thickness: 0.14em;
+    text-decoration-color: var(--color-red);
+  }
+}
+
+/* ---------------------------------- buttons (painted plates) */
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.4rem;
+    border: 2px solid var(--color-ink);
+    background: var(--color-flyer);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      transform 0.1s ease;
+  }
+  .btn:hover {
+    background: var(--color-tape);
+  }
+  .btn:active {
+    transform: translateY(2px);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-ink {
+    background: var(--color-ink);
+    color: var(--color-flyer);
+  }
+  .btn-ink:hover {
+    background: var(--color-green);
+    color: var(--color-ink);
+  }
+
+  .btn-green {
+    background: var(--color-green);
+    color: var(--color-ink);
+  }
+  .btn-green:hover {
+    background: var(--color-ink);
+    color: var(--color-green);
+  }
+
+  .btn-red {
+    border-color: var(--color-red);
+    color: var(--color-red);
+    background: transparent;
+  }
+  .btn-red:hover {
+    background: var(--color-red);
+    color: var(--color-flyer);
+  }
+
+  .btn-icon {
+    padding: 0.85rem;
+  }
+}
+
+/* ---------------------------------- forms (filled in by hand) */
+
+@layer components {
+  .label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--color-faded);
+    margin-bottom: 0.45rem;
+  }
+
+  .field {
+    width: 100%;
+    background: var(--color-flyer);
+    border: 2px solid var(--color-ink);
+    padding: 0.8rem 1rem;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    color: var(--color-ink);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .field::placeholder {
+    color: color-mix(in srgb, var(--color-faded) 70%, transparent);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-green-deep);
+    background: #fff;
+  }
+  .field[aria-invalid="true"] {
+    border-color: var(--color-red);
+  }
+
+  .select-wrap {
+    position: relative;
+  }
+  .select-wrap select {
+    appearance: none;
+    padding-right: 2.6rem;
+    cursor: pointer;
+  }
+  .select-wrap svg {
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .checkbox {
+    appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+    border: 2px solid var(--color-ink);
+    background: var(--color-flyer);
+    cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+    transition: background-color 0.12s ease;
+  }
+  .checkbox:checked {
+    background: var(--color-green);
+  }
+  .checkbox:checked::after {
+    content: "";
+    width: 0.65rem;
+    height: 0.65rem;
+    background: var(--color-ink);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+
+  /* range slider — a strip of paint with a square knob */
+  .range {
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--color-ink);
+    cursor: pointer;
+  }
+  .range::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--color-green);
+    border: 2px solid var(--color-ink);
+  }
+  .range::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 0;
+    background: var(--color-green);
+    border: 2px solid var(--color-ink);
+  }
+
+  /* segmented control, like ticking a box on the form */
+  .seg {
+    border: 2px solid var(--color-ink);
+    border-left-width: 0;
+    background: var(--color-flyer);
+    padding: 0.55rem 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+  }
+  .seg:first-child {
+    border-left-width: 2px;
+  }
+  .seg:hover {
+    background: var(--color-tape);
+  }
+  .seg[data-on="true"] {
+    background: var(--color-ink);
+    color: var(--color-flyer);
+  }
+}
+
+/* ---------------------------------- the notice board itself */
+
+@layer components {
+  /* a flyer pinned to the wall */
+  .flyer {
+    position: relative;
+    background: var(--color-flyer);
+    border: 2px solid var(--color-ink);
+    box-shadow: 0 14px 28px -16px rgba(26, 24, 18, 0.35);
+    rotate: var(--tilt, 0deg);
+    transition: rotate 0.2s ease, translate 0.2s ease, box-shadow 0.2s ease;
+  }
+  .flyer:hover {
+    rotate: 0deg;
+    translate: 0 -4px;
+    box-shadow: 0 22px 34px -16px rgba(26, 24, 18, 0.4);
+  }
+
+  /* yellow packing tape holding it up */
+  .tape {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    width: 96px;
+    height: 26px;
+    background: var(--color-tape);
+    opacity: 0.92;
+    translate: -50% 0;
+    rotate: var(--tape-tilt, -3deg);
+    box-shadow: 0 2px 4px rgba(26, 24, 18, 0.18);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .tape::before,
+  .tape::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: var(--color-wall);
+  }
+  .tape::before {
+    left: -2px;
+    clip-path: polygon(100% 0, 0 12%, 100% 25%, 0 40%, 100% 55%, 0 70%, 100% 84%, 0 100%, 100% 100%);
+  }
+  .tape::after {
+    right: -2px;
+    clip-path: polygon(0 0, 100% 12%, 0 25%, 100% 40%, 0 55%, 100% 70%, 0 84%, 100% 100%, 0 100%);
+  }
+
+  /* gate-sign status plates */
+  .plate {
+    display: inline-block;
+    padding: 0.3rem 0.65rem;
+    border: 2px solid var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    rotate: -2deg;
+  }
+  .plate-vacant {
+    background: var(--color-green);
+    color: var(--color-ink);
+  }
+  .plate-few {
+    background: var(--color-tape);
+    color: var(--color-ink);
+  }
+  .plate-full {
+    background: var(--color-red);
+    color: var(--color-flyer);
+    border-color: var(--color-ink);
+  }
+
+  /* rubber stamp */
+  .stamp {
+    display: inline-block;
+    padding: 0.5rem 1.1rem;
+    border: 3px solid currentColor;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    rotate: -6deg;
+    color: var(--color-green-deep);
+    mix-blend-mode: multiply;
+  }
+}
+
+/* ---------------------------------- the signature: tear-off tabs */
+
+@layer components {
+  .tear-strip {
+    display: flex;
+    border-top: 2px dashed var(--color-ink);
+    background: var(--color-flyer);
+  }
+
+  .tear-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 72px;
+    border-left: 2px dashed var(--color-ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-faded);
+    writing-mode: vertical-rl;
+    overflow: hidden;
+    white-space: nowrap;
+    rotate: var(--tab-tilt, 0deg);
+    transform-origin: top center;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .tear-tab:first-child {
+    border-left: 0;
+  }
+
+  /* one tab already taken — proof somebody called */
+  .tear-tab[data-torn="true"] {
+    visibility: hidden;
+  }
+
+  a.tear-strip-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+  a.tear-strip-link:hover .tear-tab {
+    background: var(--color-tape);
+    color: var(--color-ink);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tear-tab:nth-child(odd) {
+      --tab-tilt: 1deg;
+    }
+    .tear-tab:nth-child(3n) {
+      --tab-tilt: -1.4deg;
+    }
+  }
+}
+
+/* ---------------------------------- painted street banner */
+
+@layer components {
+  .banner {
+    overflow: hidden;
+    background: var(--color-ink);
+    color: var(--color-green);
+    border-block: 2px solid var(--color-ink);
+  }
+  .banner-track {
+    display: flex;
+    width: max-content;
+    gap: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .banner-track {
+      animation: banner-roll 32s linear infinite;
+    }
+  }
+  @keyframes banner-roll {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .stamp-in {
+      animation: stamp-slam 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+    }
+    @keyframes stamp-slam {
+      0% {
+        opacity: 0;
+        scale: 2.2;
+        rotate: 4deg;
+      }
+      100% {
+        opacity: 1;
+        scale: 1;
+        rotate: -6deg;
+      }
+    }
+
+    .spin-slow {
+      animation: spin-slow 16s linear infinite;
+    }
+    @keyframes spin-slow {
+      to {
+        rotate: 360deg;
+      }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flyer,
+  .flyer:hover {
+    rotate: 0deg;
+    translate: 0 0;
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }

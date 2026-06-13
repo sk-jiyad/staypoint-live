@@ -1,118 +1,313 @@
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { Wifi, CheckCircle, MapIcon, Zap } from "lucide-react"
+import { Phone, ImageOff, Wifi, UtensilsCrossed, Snowflake } from "lucide-react"
+import TearStrip from "../components/TearStrip"
+import { pgApi } from "../src/lib/api.js"
 
-export default function Landing() {
-  const features = [
-    { image:"/verified.svg", title: "Verified PGs", description: "Only verified and authentic PG listings" },
-    { image:"/smartpick.svg", title: "Smart Picks", description: "AI-powered recommendations for you" },
-    { image:"/livestatus.svg", title: "Live Status", description: "Real-time availability updates" },
-    { image:"/easyaccess.svg", title: "Easy Access", description: "One-click contact with PG owners" },
-  ]
+const inr = (n) => Number(n).toLocaleString("en-IN")
 
-  const testimonials = [
-    { name: "Rahul Kumar", role: "Student", text: "Found my perfect PG within minutes! Best platform ever." },
-    { name: "Priya Singh", role: "Student", text: "The verification system gave me peace of mind about safety." },
-    { name: "Amit Patel", role: "PG Owner", text: "Listed my PG and got genuine inquiries. Highly recommended!" },
-    { name: "Neha Sharma", role: "Student", text: "Great interface and real-time availability updates." },
-    { name: "Rohan Gupta", role: "Student", text: "Saved me so much time searching for accommodation." },
-    { name: "Anjali Desai", role: "PG Owner", text: "Easy listing process, excellent support team." },
-  ]
+// Shown when the backend is unreachable — clearly marked, never passed off as real.
+const SPECIMEN = {
+  specimen: true,
+  name: "Sunrise PG",
+  address: "Beside Aayakar Bhawan, Gobindpur, Asansol",
+  rentSingle: 4500,
+  contactNumber: "98XXX-XXXXX",
+  wifiAvailable: true,
+  foodProvided: true,
+  acAvailable: false,
+}
 
-  const featureColors = ["bg-[#CAE594]", "bg-[#DBECFE]", "bg-[#FFE9CA]", "bg-[#F9DDF6]"]
-  const testimonialColors = [
-    "bg-[#F9DDF6]",
-    "bg-[#DBECFE]",
-    "bg-[#FFE9CA]",
-    "bg-[#FFE9CA]",
-    "bg-[#CAE594]",
-    "bg-[#F9DDF6]",
-  ]
+function SpinBadge() {
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      className="spin-slow w-24 h-24 md:w-28 md:h-28 text-ink"
+      aria-hidden="true"
+    >
+      <defs>
+        <path id="ring" d="M60,60 m-44,0 a44,44 0 1,1 88,0 a44,44 0 1,1 -88,0" />
+      </defs>
+      <circle cx="60" cy="60" r="58" fill="var(--color-green)" stroke="currentColor" strokeWidth="2.5" />
+      <circle cx="60" cy="60" r="26" fill="none" stroke="currentColor" strokeWidth="2.5" />
+      <text fontSize="12.5" fontFamily="'Courier Prime', monospace" fontWeight="700" letterSpacing="2.5" fill="currentColor">
+        <textPath href="#ring">OWNER LISTED ✶ NO BROKERAGE ✶</textPath>
+      </text>
+    </svg>
+  )
+}
+
+function HeroFlyer({ pg }) {
+  const amenities = [
+    pg.wifiAvailable && ["WiFi", Wifi],
+    pg.foodProvided && ["Food", UtensilsCrossed],
+    pg.acAvailable && ["AC", Snowflake],
+  ].filter(Boolean)
+
+  const image = pg.imageUrls && pg.imageUrls.length > 0 ? pg.imageUrls[0] : null
 
   return (
-    <div className="bg-background">
-      {/* Hero Section */}
-<section className="relative min-h-screen flex items-center justify-center px-4 py-8 bg-[#FFFEF9] overflow-hidden">
-  {/* Left map vector */}
-  <img
-    src="/leftmapvector.svg"
-    alt="left path"
-    className="absolute left-[-1rem] top-[10%] w-40 md:w-64 lg:w-72 xl:w-80 opacity-90 pointer-events-none select-none"
-  />
+    <div className="flyer w-full max-w-sm" style={{ "--tilt": "1.6deg", "--tape-tilt": "2deg" }}>
+      <span className="tape" aria-hidden="true" />
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <p className="mono-label text-faded">
+            {pg.specimen ? "Specimen flyer" : "Fresh on the board"}
+          </p>
+          <span className="plate plate-vacant">To-let</span>
+        </div>
 
-  {/* Right map vector */}
-  <img
-    src="/rightmapvector.svg"
-    alt="right path"
-    className="absolute right-[-2rem] bottom-[2%] w-40 md:w-64 lg:w-72 xl:w-80 opacity-90 pointer-events-none select-none z-[1]"
-  />
+        {image ? (
+          <img src={image} alt={pg.name} className="w-full h-40 object-cover border-2 border-ink mb-4" />
+        ) : (
+          <div className="w-full h-40 border-2 border-ink mb-4 bg-board grid place-content-center text-faded">
+            <ImageOff size={28} aria-hidden="true" />
+          </div>
+        )}
 
-  <div className="max-w-4xl mx-auto text-center relative z-10">
-    <div className="flex justify-center">
-      <img src="/hero-image.svg" alt="Hero" className="w-[420px] md:w-[500px] lg:w-[650px]" />
+        <h3 className="disp text-2xl mb-1">{pg.name}</h3>
+        <p className="mono-data text-xs text-faded mb-4">{pg.address}</p>
+
+        <div className="flex items-end justify-between border-t-2 border-ink pt-3">
+          <div>
+            <p className="mono-label text-faded">Single / month</p>
+            <p className="disp text-3xl">₹{inr(pg.rentSingle)}</p>
+          </div>
+          <div className="flex gap-1.5">
+            {amenities.map(([label, Icon]) => (
+              <span key={label} className="border-2 border-ink p-1.5" title={label} aria-label={label}>
+                <Icon size={14} />
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <TearStrip
+        text={pg.contactNumber}
+        count={5}
+        to={pg.specimen ? undefined : `/pg/${pg.id}`}
+        label={pg.specimen ? undefined : `Open ${pg.name}`}
+      />
     </div>
-    <h1 className="text-2xl md:text-4xl font-bold text-black mb-4 text-balance">
-      <span className="bg-[#87E64B] px-1">Confused</span> about where to find the best PG?
-    </h1>
-    <p className="text-lg md:text-xl text-black mb-8 text-balance">
-      StayPoint brings verified PGs with real-time availability and smart recommendations — all in one place.
-    </p>
-    <Link
-      to="/explore"
-      className="inline-block px-8 py-3 bg-black text-[#87E64B] rounded-lg hover:bg-[#87E64B] hover:text-black transition font-semibold no-underline"
-    >
-      Find Now
-    </Link>
-  </div>
-</section>
+  )
+}
 
+export default function Landing() {
+  const [featured, setFeatured] = useState(null)
+  const [count, setCount] = useState(null)
 
-      {/* How We Help */}
-      <section className="py-8 px-4 max-w-7xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-black text-center mb-12">How We Help <span className="bg-[#87E64B] px-1">Students</span></h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, idx) => (
-            <div key={idx} className={`${featureColors[idx]} p-6 rounded-xl shadow-lg hover:shadow-xl transition`}>
-              <img 
-          src={feature.image} 
-          alt={feature.title}
-          className="w-36 h-28 object-contain mb-4 mx-auto"
-        />
-              <h3 className="text-xl text-center font-semibold text-gray-900 mb-2">{feature.title}</h3>
-              <p className="text-center text-gray-600">{feature.description}</p>
+  useEffect(() => {
+    let active = true
+    pgApi
+      .list()
+      .then((data) => {
+        if (!active) return
+        setCount(data.length)
+        setFeatured(data.length > 0 ? data[0] : SPECIMEN)
+      })
+      .catch(() => active && setFeatured(SPECIMEN))
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const towns = ["Asansol", "Durgapur", "Raniganj", "Kulti", "Burnpur", "Andal", "No brokers", "No spam"]
+
+  return (
+    <div>
+      {/* ---------------------------------------------------------- hero */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-20 grid lg:grid-cols-[1.25fr_1fr] gap-14 items-center">
+        <div>
+          <p className="mono-label text-green-deep mb-5">Staypoint · PG discovery for students</p>
+          <h1 className="disp text-[clamp(2.7rem,7.5vw,5.6rem)] mb-6">
+            Every wall in town says{" "}
+            <span className="accent normal-case text-green-deep">to-let.</span>
+            <br />
+            We made it searchable.
+          </h1>
+          <p className="text-lg text-faded max-w-[46ch] mb-9">
+            Real rooms near your college, real rents, and the owner's number on a tab
+            you can actually tear off. No brokers. No "rates in DM".
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <Link to="/explore" className="btn btn-ink !px-7 !py-4">
+              Scan the board →
+            </Link>
+            <Link to="/add-pg" className="btn !px-7 !py-4">
+              Paste your flyer
+            </Link>
+          </div>
+
+          {/* honest stats */}
+          <div className="mt-12 grid grid-cols-3 max-w-md border-2 border-ink divide-x-2 divide-ink bg-flyer">
+            {[
+              [count == null ? "—" : count, "flyers live"],
+              ["₹0", "brokerage"],
+              ["2 taps", "to call"],
+            ].map(([big, small]) => (
+              <div key={small} className="p-4 text-center">
+                <p className="disp text-2xl mono-data">{big}</p>
+                <p className="mono-label text-faded mt-1">{small}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative flex justify-center lg:justify-end pt-6 lg:pr-6">
+          {featured ? (
+            <HeroFlyer pg={featured} />
+          ) : (
+            <div className="flyer w-full max-w-sm h-[480px] grid place-content-center" style={{ "--tilt": "1.6deg" }}>
+              <span className="tape" aria-hidden="true" />
+              <p className="mono-label text-faded">Pasting up the board…</p>
+            </div>
+          )}
+          <div className="absolute -bottom-8 -left-2 md:left-6">
+            <SpinBadge />
+          </div>
+        </div>
+      </section>
+
+      {/* -------------------------------------------------- street banner */}
+      <div className="banner py-3" aria-hidden="true">
+        <div className="banner-track">
+          {[0, 1].map((dup) => (
+            <div key={dup} className="flex shrink-0">
+              {towns.map((t) => (
+                <span key={t + dup} className="disp text-xl px-6 whitespace-nowrap">
+                  {t} <span className="text-flyer/40 pl-6">✶</span>
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ---------------------------------------------- what's on the board */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="max-w-xl mb-14">
+          <p className="mono-label text-green-deep mb-3">What's on the board</p>
+          <h2 className="disp text-4xl md:text-5xl">
+            A flyer that tells you{" "}
+            <span className="accent normal-case text-green-deep">the truth.</span>
+          </h2>
+        </div>
+
+        <div className="grid sm:grid-cols-2 border-2 border-ink bg-flyer divide-y-2 divide-ink sm:divide-y-0">
+          {[
+            {
+              head: "Owner-listed",
+              body: "Every flyer goes up by the owner, with their direct number printed on the tabs. No middlemen taking a cut of your deposit.",
+            },
+            {
+              head: "Filters that work",
+              body: "Rent ceiling, gender, vacancy. Three clicks instead of three weeks of scrolling rental groups.",
+            },
+            {
+              head: "Photos, or it says so",
+              body: "Owners upload their own photos. A listing with no photos shows you that honestly instead of a stock bedroom.",
+            },
+            {
+              head: "Call, don't DM",
+              body: "One tap to call, one to WhatsApp — straight from the flyer. Skip the \"rates in DM\" circus entirely.",
+            },
+          ].map((f, i) => (
+            <div
+              key={f.head}
+              className={`p-8 md:p-10 hover:bg-tape/40 transition-colors ${
+                i % 2 === 0 ? "sm:border-r-2 sm:border-ink" : ""
+              } ${i > 1 ? "sm:border-t-2 sm:border-ink" : ""}`}
+            >
+              <p className="accent text-green-deep text-xl mb-2" aria-hidden="true">✓</p>
+              <h3 className="disp text-2xl mb-3">{f.head}</h3>
+              <p className="text-faded leading-relaxed max-w-[44ch]">{f.body}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Key Features */}
-        <section className="py-20 px-4 bg-[#FFFEF9] flex items-center justify-center">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-16">Key <span className="bg-[#87E64B] px-1">Features</span></h2>
-            <div className="grid grid-cols-1 md:grid-cols-1 items-center">
-          <div className="flex justify-center w-full">
-            <img
-              src="/mobile.svg"
-              alt="Phone mockup"
-              className="w-300"
-            />
+      {/* --------------------------------------------------- how it works */}
+      <section className="bg-board border-y-2 border-ink">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="max-w-xl mb-14">
+            <p className="mono-label text-green-deep mb-3">How it works</p>
+            <h2 className="disp text-4xl md:text-5xl">Three steps. No third step is "negotiate with a broker".</h2>
           </div>
-            </div>
-          </div>
-        </section>
 
-        {/* User Feedback */}
-      <section className="py-20 px-4 max-w-7xl mx-auto bg-[#FFFEF9]">
-        <h2 className="text-3xl md:text-4xl font-bold text-black text-center mb-12">Users <span className="bg-[#87E64B] px-1 ">Feedback</span></h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, idx) => (
-            <div key={idx} className={`${testimonialColors[idx]} p-6 rounded-xl shadow-lg`}>
-              <p className="text-gray-700 mb-4 italic">"{testimonial.text}"</p>
-              <div>
-                <p className="font-semibold text-gray-900">{testimonial.name}</p>
-                <p className="text-sm text-gray-600">{testimonial.role}</p>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              ["01", "Scan the board", "Browse every PG in town in one place. Filter by rent, gender and vacancy until the list is yours."],
+              ["02", "Tear a tab", "Open a flyer, check the photos and the per-room rents, then take the owner's number with you."],
+              ["03", "Make the call", "Call or WhatsApp the owner directly. Visit, haggle, move in. We were never in the middle."],
+            ].map(([num, head, body]) => (
+              <div key={num} className="flyer p-8" style={{ "--tilt": `${(Number(num) - 2) * 0.7}deg` }}>
+                <p className="mono-data font-bold text-5xl text-green-deep mb-4">{num}</p>
+                <h3 className="disp text-2xl mb-3">{head}</h3>
+                <p className="text-faded leading-relaxed">{body}</p>
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------ owner band */}
+      <section className="bg-green border-b-2 border-ink">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 grid lg:grid-cols-[1.5fr_auto] gap-10 items-center">
+          <div>
+            <p className="mono-label text-ink/60 mb-3">For owners</p>
+            <h2 className="disp text-4xl md:text-6xl mb-4">
+              Got an empty room?
+            </h2>
+            <p className="text-ink/80 text-lg max-w-[48ch]">
+              Your next tenant is scrolling this board right now. Pasting a flyer takes
+              about four minutes, photos included — and it never costs you a paisa.
+            </p>
+          </div>
+          <Link to="/add-pg" className="btn btn-ink !px-8 !py-5 justify-self-start lg:justify-self-end">
+            Paste your flyer →
+          </Link>
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------- testimonials */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="max-w-xl mb-16">
+          <p className="mono-label text-green-deep mb-3">Notes left on the board</p>
+          <h2 className="disp text-4xl md:text-5xl">People who stopped scrolling.</h2>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+          {[
+            { name: "Rahul Kumar", role: "Student", text: "Found my room before my hostel waitlist even moved. Two days, done." },
+            { name: "Priya Singh", role: "Student", text: "Called three owners in one evening straight from the flyers. No middleman, no awkward DMs." },
+            { name: "Amit Patel", role: "PG owner", text: "Listed my PG in a few minutes and got genuine calls, not time-pass enquiries." },
+            { name: "Neha Sharma", role: "Student", text: "The rent filter alone saved me a week of asking 'budget kya hai' in groups." },
+            { name: "Rohan Gupta", role: "Student", text: "Photos on the listing matched the actual room. That alone is rare." },
+            { name: "Anjali Desai", role: "PG owner", text: "Editing my flyer when a room fills up takes seconds. The board stays honest." },
+          ].map((t, i) => (
+            <figure key={t.name} className="flyer p-7" style={{ "--tilt": `${[(-1.4), 1, -0.6, 1.3, -1, 0.7][i]}deg`, "--tape-tilt": `${[3, -4, 2, -2, 4, -3][i]}deg` }}>
+              <span className="tape" aria-hidden="true" />
+              <blockquote className="text-ink leading-relaxed mb-5">"{t.text}"</blockquote>
+              <figcaption>
+                <p className="disp text-base">{t.name}</p>
+                <p className="mono-label text-faded mt-0.5">{t.role}</p>
+              </figcaption>
+            </figure>
           ))}
+        </div>
+      </section>
+
+      {/* -------------------------------------------------------- final CTA */}
+      <section className="bg-ink text-flyer border-y-2 border-ink">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
+          <h2 className="disp text-[clamp(2.4rem,6.5vw,5rem)] mb-4">
+            Hostel waitlist said no?
+          </h2>
+          <p className="accent text-green text-3xl md:text-4xl mb-10">the board says yes.</p>
+          <Link to="/explore" className="btn btn-green !px-9 !py-5 !text-sm">
+            Find a room →
+          </Link>
         </div>
       </section>
     </div>

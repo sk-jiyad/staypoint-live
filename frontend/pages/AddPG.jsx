@@ -2,11 +2,13 @@
 
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import { Upload } from "lucide-react"
+import { Upload, ChevronDown, X } from "lucide-react"
 import { useAuth } from "@clerk/clerk-react"
 import { useRole } from "../src/lib/role.js"
 import { pgApi, ApiError } from "../src/lib/api.js"
 import { uploadImage } from "../src/lib/cloudinary.js"
+
+const STEPS = ["Basics", "Rooms & rent", "Amenities", "Photos", "Owner"]
 
 export default function AddPG() {
   const navigate = useNavigate()
@@ -79,8 +81,7 @@ export default function AddPG() {
     setError("")
     setSubmitting(true)
     // Map the wizard fields onto the backend PGCreateDTO. Fields the backend
-    // doesn't model (city, college, gender, room counts, photos, email) are
-    // intentionally not sent.
+    // doesn't model (city, college, email) are intentionally not sent.
     const payload = {
       name: formData.pgName,
       ownerName: formData.ownerName,
@@ -128,19 +129,18 @@ export default function AddPG() {
   // --- Auth gate: only logged-in PG owners may create a listing ---
   if (!isSignedIn || !isOwner) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-white mb-2">Owners only</h2>
-          <p className="text-gray-400 mb-6">
+      <div className="min-h-[70vh] flex items-center justify-center py-12 px-4">
+        <div className="flyer max-w-md w-full p-9 text-center" style={{ "--tilt": "-1deg" }}>
+          <span className="tape" aria-hidden="true" />
+          <p className="mono-label text-faded mb-2">Owners only</p>
+          <h2 className="disp text-3xl mb-3">This side of the board is for owners.</h2>
+          <p className="text-faded mb-7 text-sm">
             {isSignedIn
-              ? "Your account isn't a PG Owner account, so you can't list a PG."
-              : "Please log in as a PG Owner to list a PG."}
+              ? "Your account isn't a PG-owner account, so you can't paste a flyer."
+              : "Log in as a PG owner to paste your flyer on the board."}
           </p>
-          <Link
-            to="/login"
-            className="px-6 py-2 bg-green-500 text-black rounded-lg hover:bg-green-600 transition font-semibold"
-          >
-            {isSignedIn ? "Switch account" : "Login / Sign up"}
+          <Link to="/login" className="btn btn-green w-full">
+            {isSignedIn ? "Switch account" : "Log in / Sign up"}
           </Link>
         </div>
       </div>
@@ -149,27 +149,19 @@ export default function AddPG() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
+      <div className="min-h-[70vh] flex items-center justify-center py-12 px-4">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Listing Created!</h2>
-          <p className="text-gray-400 mb-6">Your PG is now live on StayPoint.</p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={() => navigate(`/pg/${createdId}`)}
-              className="px-6 py-2 bg-green-500 text-black rounded-lg hover:bg-green-600 transition font-semibold"
-            >
-              View Listing
+          <p className="stamp stamp-in text-3xl mb-8">Pasted ✓</p>
+          <h2 className="disp text-5xl mb-3">It's on the board.</h2>
+          <p className="text-faded mb-9">
+            Your flyer is live. Students browsing StayPoint can see it — and tear a tab — right now.
+          </p>
+          <div className="flex gap-3 justify-center flex-wrap">
+            <button onClick={() => navigate(`/pg/${createdId}`)} className="btn btn-green">
+              See my flyer →
             </button>
-            <button
-              onClick={() => navigate("/explore")}
-              className="px-6 py-2 border border-gray-600 text-white rounded-lg hover:bg-gray-800 transition font-semibold"
-            >
-              Explore PGs
+            <button onClick={() => navigate("/explore")} className="btn">
+              Browse the board
             </button>
           </div>
         </div>
@@ -178,243 +170,236 @@ export default function AddPG() {
   }
 
   return (
-    <div className="w-screen min-h-screen bg-background py-12 px-6 overflow-x-hidden">
-      <div className="w-full">
-        {/* Progress Bar */}
-        <div className="mb-10 px-8">
-          <div className="flex justify-between mb-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className={`h-1 flex-1 mx-1 rounded ${i <= step ? "bg-green-500" : "bg-gray-700"}`} />
-            ))}
-          </div>
-          <p className="text-gray-400 text-sm">Step {step} of 5</p>
-        </div>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mb-9">
+        <p className="mono-label text-green-deep mb-2">For owners</p>
+        <h1 className="disp text-4xl md:text-5xl">Paste a flyer</h1>
+      </div>
 
-        <div className="bg-gray-900 rounded-2xl p-10 shadow-lg mx-8">
-          <form onSubmit={handleSubmit} className="w-full">
-            {/* Step 1: Basic Info */}
-            {step === 1 && (
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold text-white mb-6">Basic Information</h2>
-                <input
-                  type="text"
-                  name="pgName"
-                  placeholder="PG Name"
-                  value={formData.pgName}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  name="address"
-                  placeholder="Address (at least 10 characters)"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  name="city"
-                  placeholder="City (optional)"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                />
-                <select
-                  name="college"
-                  value={formData.college}
-                  onChange={handleInputChange}
-                  className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-green-500 focus:outline-none"
-                >
-                  <option value="">Select Nearby College (optional)</option>
-                  <option value="Delhi University">Delhi University</option>
-                  <option value="Jamia Millia">Jamia Millia</option>
-                  <option value="IP University">IP University</option>
-                </select>
+      {/* step rail — a real sequence, so it earns its numbers */}
+      <ol className="grid grid-cols-5 border-2 border-ink bg-flyer mb-10 list-none p-0 m-0" aria-label="Listing steps">
+        {STEPS.map((label, i) => {
+          const n = i + 1
+          const state = n < step ? "done" : n === step ? "now" : "todo"
+          return (
+            <li
+              key={label}
+              aria-current={state === "now" ? "step" : undefined}
+              className={`px-2 py-3 text-center border-l-2 border-ink first:border-l-0 ${
+                state === "now"
+                  ? "bg-green"
+                  : state === "done"
+                  ? "bg-ink text-flyer"
+                  : "text-faded"
+              }`}
+            >
+              <span className="mono-data font-bold text-sm block">{String(n).padStart(2, "0")}</span>
+              <span className="mono-label hidden sm:block mt-0.5 !text-[9px]">{label}</span>
+            </li>
+          )
+        })}
+      </ol>
+
+      <div className="border-2 border-ink bg-flyer p-7 md:p-10">
+        <form onSubmit={handleSubmit}>
+          {/* Step 1: Basics */}
+          {step === 1 && (
+            <fieldset className="space-y-5 border-0 p-0 m-0">
+              <legend className="disp text-3xl mb-6 p-0">The basics</legend>
+              <div>
+                <label htmlFor="pgName" className="label">PG name *</label>
+                <input id="pgName" type="text" name="pgName" placeholder="e.g. Sunrise PG"
+                  value={formData.pgName} onChange={handleInputChange} className="field" />
               </div>
-            )}
-
-            {/* Step 2: Room Details */}
-            {step === 2 && (
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold text-white mb-6">Room Details</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <input
-                    type="number"
-                    name="rentSingle"
-                    placeholder="Single room rent (₹) *"
-                    value={formData.rentSingle}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                  />
-                  <input
-                    type="number"
-                    name="rentDouble"
-                    placeholder="Double room rent (₹) *"
-                    value={formData.rentDouble}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                  />
-                  <input
-                    type="number"
-                    name="rentTriple"
-                    placeholder="Triple room rent (₹, optional)"
-                    value={formData.rentTriple}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                  />
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-green-500 focus:outline-none"
-                  >
-                    <option value="boys">Boys</option>
-                    <option value="girls">Girls</option>
-                    <option value="coed">Co-ed</option>
+              <div>
+                <label htmlFor="address" className="label">Full address * (at least 10 characters)</label>
+                <input id="address" type="text" name="address" placeholder="House no., street, area, town, PIN"
+                  value={formData.address} onChange={handleInputChange} className="field" />
+              </div>
+              <div>
+                <label htmlFor="city" className="label">City (optional)</label>
+                <input id="city" type="text" name="city" placeholder="e.g. Asansol"
+                  value={formData.city} onChange={handleInputChange} className="field" />
+              </div>
+              <div>
+                <label htmlFor="college" className="label">Nearby college (optional)</label>
+                <div className="select-wrap">
+                  <select id="college" name="college" value={formData.college} onChange={handleInputChange} className="field">
+                    <option value="">Select a college</option>
+                    <option value="Delhi University">Delhi University</option>
+                    <option value="Jamia Millia">Jamia Millia</option>
+                    <option value="IP University">IP University</option>
                   </select>
-                  <input
-                    type="number"
-                    name="totalRooms"
-                    placeholder="Total Rooms (optional)"
-                    value={formData.totalRooms}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                  />
-                  <input
-                    type="number"
-                    name="availableRooms"
-                    placeholder="Available Rooms (optional)"
-                    value={formData.availableRooms}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                  />
+                  <ChevronDown size={16} aria-hidden="true" />
                 </div>
               </div>
-            )}
+            </fieldset>
+          )}
 
-            {/* Step 3: Amenities */}
-            {step === 3 && (
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold text-white mb-6">Amenities</h2>
-                <div className="grid md:grid-cols-3 gap-4">
-                  {amenities.map((amenity) => (
-                    <label key={amenity} className="flex items-center gap-3 cursor-pointer">
+          {/* Step 2: Rooms & rent */}
+          {step === 2 && (
+            <fieldset className="border-0 p-0 m-0">
+              <legend className="disp text-3xl mb-6 p-0">Rooms &amp; rent</legend>
+              <div className="grid md:grid-cols-2 gap-5">
+                <div>
+                  <label htmlFor="rentSingle" className="label">Single room rent (₹/mo) *</label>
+                  <input id="rentSingle" type="number" name="rentSingle" placeholder="4500"
+                    value={formData.rentSingle} onChange={handleInputChange} className="field" />
+                </div>
+                <div>
+                  <label htmlFor="rentDouble" className="label">Double room rent (₹/mo) *</label>
+                  <input id="rentDouble" type="number" name="rentDouble" placeholder="3200"
+                    value={formData.rentDouble} onChange={handleInputChange} className="field" />
+                </div>
+                <div>
+                  <label htmlFor="rentTriple" className="label">Triple room rent (₹/mo, optional)</label>
+                  <input id="rentTriple" type="number" name="rentTriple" placeholder="2500"
+                    value={formData.rentTriple} onChange={handleInputChange} className="field" />
+                </div>
+                <div>
+                  <label htmlFor="gender" className="label">For</label>
+                  <div className="select-wrap">
+                    <select id="gender" name="gender" value={formData.gender} onChange={handleInputChange} className="field">
+                      <option value="boys">Boys</option>
+                      <option value="girls">Girls</option>
+                      <option value="coed">Co-ed</option>
+                    </select>
+                    <ChevronDown size={16} aria-hidden="true" />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="totalRooms" className="label">Total rooms (optional)</label>
+                  <input id="totalRooms" type="number" name="totalRooms" placeholder="12"
+                    value={formData.totalRooms} onChange={handleInputChange} className="field" />
+                </div>
+                <div>
+                  <label htmlFor="availableRooms" className="label">Rooms available now (optional)</label>
+                  <input id="availableRooms" type="number" name="availableRooms" placeholder="3"
+                    value={formData.availableRooms} onChange={handleInputChange} className="field" />
+                </div>
+              </div>
+            </fieldset>
+          )}
+
+          {/* Step 3: Amenities */}
+          {step === 3 && (
+            <fieldset className="border-0 p-0 m-0">
+              <legend className="disp text-3xl mb-6 p-0">What's included</legend>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {amenities.map((amenity) => {
+                  const on = formData.amenities.includes(amenity)
+                  return (
+                    <label
+                      key={amenity}
+                      className={`flex items-center gap-3 cursor-pointer border-2 px-4 py-3 transition-colors ${
+                        on ? "border-ink bg-green" : "border-ink bg-flyer hover:bg-tape/50"
+                      }`}
+                    >
                       <input
                         type="checkbox"
-                        checked={formData.amenities.includes(amenity)}
+                        checked={on}
                         onChange={() => handleAmenityChange(amenity)}
-                        className="w-5 h-5 rounded border-gray-700 text-green-500"
+                        className="checkbox"
                       />
-                      <span className="text-gray-300">{amenity}</span>
+                      <span className="mono-data text-sm font-bold">{amenity}</span>
                     </label>
+                  )
+                })}
+              </div>
+              <p className="mono-data text-xs text-faded mt-5">
+                WiFi, Food and AC print onto your flyer; the rest are coming to the board soon.
+              </p>
+            </fieldset>
+          )}
+
+          {/* Step 4: Photos */}
+          {step === 4 && (
+            <fieldset className="border-0 p-0 m-0">
+              <legend className="disp text-3xl mb-2 p-0">Photos</legend>
+              <p className="text-faded text-sm mb-6">
+                Flyers with real photos get the calls. Phone-camera shots are fine.
+              </p>
+              <label className="border-2 border-dashed border-ink p-12 text-center w-full block cursor-pointer hover:bg-tape/40 transition-colors">
+                <Upload className="w-10 h-10 text-faded mx-auto mb-3" aria-hidden="true" />
+                <p className="mono-label text-ink">
+                  {uploading ? "Uploading…" : "Click to add photos"}
+                </p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFiles}
+                  disabled={uploading}
+                />
+              </label>
+              {uploadError && <p className="mono-data text-sm text-red mt-3">{uploadError}</p>}
+              {formData.imageUrls.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-5">
+                  {formData.imageUrls.map((url) => (
+                    <div key={url} className="relative border-2 border-ink">
+                      <img src={url} alt="" className="w-full h-24 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(url)}
+                        className="absolute -top-2.5 -right-2.5 bg-ink text-flyer w-6 h-6 grid place-content-center cursor-pointer border-0"
+                        aria-label="Remove photo"
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Note: WiFi, Food and AC are saved to your listing; the rest are coming soon.
-                </p>
-              </div>
-            )}
+              )}
+            </fieldset>
+          )}
 
-            {/* Step 4: Photos */}
-            {step === 4 && (
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold text-white mb-6">Upload Photos</h2>
-                <label className="border-2 border-dashed border-gray-700 rounded-lg p-12 text-center w-full block cursor-pointer hover:border-green-500 transition">
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-300 mb-2">
-                    {uploading ? "Uploading…" : "Click to add photos"}
-                  </p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleFiles}
-                    disabled={uploading}
-                  />
-                </label>
-                {uploadError && <p className="text-sm text-red-400">{uploadError}</p>}
-                {formData.imageUrls.length > 0 && (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                    {formData.imageUrls.map((url) => (
-                      <div key={url} className="relative">
-                        <img src={url} alt="" className="w-full h-24 object-cover rounded-lg" />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(url)}
-                          className="absolute top-1 right-1 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 5: Owner Info */}
-            {step === 5 && (
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold text-white mb-6">Owner Information</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <input
-                    type="text"
-                    name="ownerName"
-                    placeholder="Your Name *"
-                    value={formData.ownerName}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                  />
-                  <input
-                    type="tel"
-                    name="phone"
-                    placeholder="Contact Number (10 digits) *"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                  />
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Email (optional, not saved yet)"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="md:col-span-2 w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none"
-                  />
+          {/* Step 5: Owner */}
+          {step === 5 && (
+            <fieldset className="border-0 p-0 m-0">
+              <legend className="disp text-3xl mb-2 p-0">Your details</legend>
+              <p className="text-faded text-sm mb-6">
+                This number goes on the tear-off tabs — it's how students reach you.
+              </p>
+              <div className="grid md:grid-cols-2 gap-5">
+                <div>
+                  <label htmlFor="ownerName" className="label">Your name *</label>
+                  <input id="ownerName" type="text" name="ownerName" placeholder="e.g. Ramesh Kumar"
+                    value={formData.ownerName} onChange={handleInputChange} className="field" />
+                </div>
+                <div>
+                  <label htmlFor="phone" className="label">Contact number (10 digits) *</label>
+                  <input id="phone" type="tel" name="phone" placeholder="9876543210"
+                    value={formData.phone} onChange={handleInputChange} className="field mono-data" />
+                </div>
+                <div className="md:col-span-2">
+                  <label htmlFor="email" className="label">Email (optional, not saved yet)</label>
+                  <input id="email" type="email" name="email" placeholder="you@example.com"
+                    value={formData.email} onChange={handleInputChange} className="field" />
                 </div>
               </div>
-            )}
+            </fieldset>
+          )}
 
-            {/* Error message */}
-            {error && (
-              <p className="mt-6 text-sm text-red-400 bg-red-950/40 border border-red-900 rounded-lg px-3 py-2">
-                {error}
-              </p>
-            )}
+          {/* error */}
+          {error && (
+            <p role="alert" className="mt-7 mono-data text-sm text-red border-2 border-red bg-red/5 px-4 py-3">
+              {error}
+            </p>
+          )}
 
-            {/* Navigation Buttons */}
-            <div className="flex gap-4 mt-10">
-              {step > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setStep(step - 1)}
-                  className="flex-1 px-6 py-3 border border-gray-700 text-white rounded-lg hover:bg-gray-800 transition font-semibold"
-                >
-                  Previous
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 px-6 py-3 bg-green-500 text-black rounded-lg hover:bg-green-600 transition font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {step === 5 ? (submitting ? "Listing…" : "List My PG") : "Next"}
+          {/* navigation */}
+          <div className="flex gap-4 mt-10">
+            {step > 1 && (
+              <button type="button" onClick={() => setStep(step - 1)} className="btn flex-1">
+                ← Back
               </button>
-            </div>
-          </form>
-        </div>
+            )}
+            <button type="submit" disabled={submitting} className="btn btn-green flex-1">
+              {step === 5 ? (submitting ? "Pasting…" : "Paste my flyer") : "Next →"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

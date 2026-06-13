@@ -22,27 +22,31 @@ export default function RoleOnboarding() {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-[#191919] border border-gray-800 rounded-2xl p-8 max-w-md w-full text-center">
-        <h2 className="text-2xl font-bold text-white mb-2">Welcome to StayPoint!</h2>
-        <p className="text-gray-400 mb-6">How will you use StayPoint?</p>
-        <div className="grid gap-3">
-          <button
-            disabled={saving}
-            onClick={() => pick("renter")}
-            className="px-5 py-3 rounded-lg bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-60"
-          >
-            I'm looking for a PG (Renter)
-          </button>
-          <button
-            disabled={saving}
-            onClick={() => pick("owner")}
-            className="px-5 py-3 rounded-lg bg-[#87E64B] text-black font-semibold disabled:opacity-60"
-          >
-            I want to list PGs (Owner)
-          </button>
+    <div className="fixed inset-0 z-[100] bg-ink/85 flex items-center justify-center p-4">
+      <div className="flyer max-w-md w-full" style={{ "--tilt": "-1deg" }}>
+        <span className="tape" aria-hidden="true" />
+        <div className="p-8 text-center">
+          <p className="mono-label text-faded mb-2">One quick question</p>
+          <h2 className="disp text-3xl mb-2">Why are you at this board?</h2>
+          <p className="text-faded mb-7 text-sm">Pick one — it decides what you can do here.</p>
+          <div className="grid gap-3">
+            <button
+              disabled={saving}
+              onClick={() => pick("renter")}
+              className="btn w-full justify-between"
+            >
+              I'm hunting a room <span aria-hidden="true">→</span>
+            </button>
+            <button
+              disabled={saving}
+              onClick={() => pick("owner")}
+              className="btn btn-green w-full justify-between"
+            >
+              I've got rooms to let <span aria-hidden="true">→</span>
+            </button>
+          </div>
+          {saving && <p className="mono-label text-faded mt-5">Saving…</p>}
         </div>
-        {saving && <p className="text-gray-500 text-sm mt-4">Saving…</p>}
       </div>
     </div>
   );

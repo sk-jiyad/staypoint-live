@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { X } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
 import { useRole } from "../src/lib/role.js";
 import { pgApi, ApiError } from "../src/lib/api.js";
 import { uploadImage } from "../src/lib/cloudinary.js";
 
 const AMENITIES = [
-  { key: "wifiAvailable", label: "WiFi" },
+  { key: "wifiAvailable", label: "Wi-Fi" },
   { key: "foodProvided", label: "Food" },
   { key: "acAvailable", label: "AC" },
 ];
@@ -154,15 +155,17 @@ export default function EditPG() {
     }
   };
 
-  // Auth gate
+  // --- Auth gate: owners only ---
   if (!isSignedIn || !isOwner) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-white mb-2">Owners only</h2>
-          <p className="text-gray-400 mb-6">Please log in as a PG Owner to edit listings.</p>
-          <Link to="/login" className="px-6 py-2 bg-green-500 text-black rounded-lg font-semibold">
-            Login / Sign up
+      <div className="min-h-[70vh] flex items-center justify-center py-12 px-4">
+        <div className="flyer max-w-md w-full p-9 text-center" style={{ "--tilt": "1deg" }}>
+          <span className="tape" aria-hidden="true" />
+          <p className="mono-label text-faded mb-2">Owners only</p>
+          <h2 className="disp text-3xl mb-3">You can&rsquo;t correct someone else&rsquo;s flyer.</h2>
+          <p className="text-faded mb-7 text-sm">Log in as a PG owner to edit listings.</p>
+          <Link to="/login" className="btn btn-green w-full">
+            Log in / Sign up
           </Link>
         </div>
       </div>
@@ -170,104 +173,196 @@ export default function EditPG() {
   }
 
   if (loading) {
-    return <div className="text-gray-400 text-center mt-20 text-xl">Loading…</div>;
+    return (
+      <div className="min-h-[60vh] grid place-content-center text-center px-4">
+        <p className="mono-label text-faded animate-pulse">Pulling the flyer off the board…</p>
+      </div>
+    );
   }
   if (loadError) {
-    return <div className="text-gray-300 text-center mt-20 text-xl">{loadError}</div>;
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="flyer max-w-md w-full p-9 text-center" style={{ "--tilt": "-1.2deg" }}>
+          <span className="tape" aria-hidden="true" />
+          <h2 className="disp text-3xl mb-3">{loadError}</h2>
+          <p className="text-faded text-sm mb-7">
+            Either it never existed or somebody tore the whole thing down.
+          </p>
+          <Link to="/my-listings" className="btn btn-ink w-full">
+            Back to my flyers
+          </Link>
+        </div>
+      </div>
+    );
   }
 
-  const input =
-    "w-full px-5 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-green-500 focus:outline-none";
-
   return (
-    <div className="w-screen min-h-screen bg-background py-12 px-6">
-      <div className="max-w-3xl mx-auto bg-gray-900 rounded-2xl p-8 md:p-10 shadow-lg">
-        <h1 className="text-3xl font-bold text-white mb-6">Edit Listing</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input className={input} placeholder="PG Name *" value={form.name} onChange={set("name")} />
-          <input className={input} placeholder="Owner Name *" value={form.ownerName} onChange={set("ownerName")} />
-          <div className="grid md:grid-cols-2 gap-4">
-            <input className={input} placeholder="Contact Number (10 digits) *" value={form.contactNumber} onChange={set("contactNumber")} />
-            <input className={input} placeholder="Alternate Contact (optional)" value={form.alternateContact} onChange={set("alternateContact")} />
+    <div className="min-h-screen py-12 px-4 sm:px-6">
+      <div className="max-w-3xl mx-auto">
+        {/* page header */}
+        <div className="flex items-end justify-between flex-wrap gap-3 mb-8">
+          <div>
+            <p className="mono-label text-faded mb-1">Correction slip · Flyer №&thinsp;{id}</p>
+            <h1 className="disp text-4xl sm:text-5xl">Fix the flyer.</h1>
           </div>
-          <input className={input} placeholder="Address (10-500 chars) *" value={form.address} onChange={set("address")} />
-          <input className={input} placeholder="Landmark (optional)" value={form.landmark} onChange={set("landmark")} />
-          <div className="grid md:grid-cols-3 gap-4">
-            <input type="number" className={input} placeholder="Single rent *" value={form.rentSingle} onChange={set("rentSingle")} />
-            <input type="number" className={input} placeholder="Double rent *" value={form.rentDouble} onChange={set("rentDouble")} />
-            <input type="number" className={input} placeholder="Triple rent (optional)" value={form.rentTriple} onChange={set("rentTriple")} />
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            <select className={input} value={form.gender} onChange={set("gender")}>
-              <option value="boys">Boys</option>
-              <option value="girls">Girls</option>
-              <option value="coed">Co-ed</option>
-            </select>
-            <input type="number" className={input} placeholder="Total rooms (optional)" value={form.totalRooms} onChange={set("totalRooms")} />
-            <input type="number" className={input} placeholder="Available rooms (optional)" value={form.availableRooms} onChange={set("availableRooms")} />
-          </div>
+          <span className="stamp" style={{ "--tilt": "-4deg" }}>
+            Re-paste
+          </span>
+        </div>
 
-          <div className="flex flex-wrap gap-6 pt-2">
-            {AMENITIES.map((a) => (
-              <label key={a.key} className="flex items-center gap-2 cursor-pointer text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={form[a.key]}
-                  onChange={set(a.key)}
-                  className="w-5 h-5 rounded border-gray-700 text-green-500"
-                />
-                {a.label}
-              </label>
-            ))}
-          </div>
-
-          {/* Photos */}
-          <div className="pt-2">
-            <label className="block text-sm text-gray-400 mb-2">Photos</label>
-            <div className="flex flex-wrap gap-3">
-              {form.imageUrls.map((url) => (
-                <div key={url} className="relative">
-                  <img src={url} alt="" className="w-20 h-20 object-cover rounded-lg" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(url)}
-                    className="absolute -top-2 -right-2 bg-black/80 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                  >
-                    ×
-                  </button>
+        <div className="flyer p-7 sm:p-10" style={{ "--tilt": "0deg" }}>
+          <span className="tape" aria-hidden="true" />
+          <form onSubmit={handleSubmit} noValidate>
+            {/* identity */}
+            <fieldset className="border-0 p-0 m-0 mb-8">
+              <legend className="mono-label text-faded p-0 mb-4">The place</legend>
+              <div className="space-y-4">
+                <div>
+                  <label className="label" htmlFor="ed-name">PG name *</label>
+                  <input id="ed-name" className="field" placeholder="e.g. Adhya PG" value={form.name} onChange={set("name")} />
                 </div>
-              ))}
-              <label className="w-20 h-20 border-2 border-dashed border-gray-700 rounded-lg flex items-center justify-center cursor-pointer hover:border-green-500 text-gray-400 text-sm">
-                {uploading ? "…" : "+ Add"}
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} disabled={uploading} />
-              </label>
+                <div>
+                  <label className="label" htmlFor="ed-address">Full address *</label>
+                  <input id="ed-address" className="field" placeholder="House no, street, area, town (10–500 chars)" value={form.address} onChange={set("address")} />
+                </div>
+                <div>
+                  <label className="label" htmlFor="ed-landmark">Landmark</label>
+                  <input id="ed-landmark" className="field" placeholder="Near the water tank, behind the temple…" value={form.landmark} onChange={set("landmark")} />
+                </div>
+              </div>
+            </fieldset>
+
+            {/* rent */}
+            <fieldset className="border-0 p-0 m-0 mb-8">
+              <legend className="mono-label text-faded p-0 mb-4">Rent per head / month</legend>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="label" htmlFor="ed-single">Single (₹) *</label>
+                  <input id="ed-single" type="number" min="1" className="field" placeholder="8000" value={form.rentSingle} onChange={set("rentSingle")} />
+                </div>
+                <div>
+                  <label className="label" htmlFor="ed-double">Double (₹) *</label>
+                  <input id="ed-double" type="number" min="1" className="field" placeholder="6000" value={form.rentDouble} onChange={set("rentDouble")} />
+                </div>
+                <div>
+                  <label className="label" htmlFor="ed-triple">Triple (₹)</label>
+                  <input id="ed-triple" type="number" min="1" className="field" placeholder="optional" value={form.rentTriple} onChange={set("rentTriple")} />
+                </div>
+              </div>
+            </fieldset>
+
+            {/* who + rooms */}
+            <fieldset className="border-0 p-0 m-0 mb-8">
+              <legend className="mono-label text-faded p-0 mb-4">Rooms</legend>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="label" htmlFor="ed-gender">For</label>
+                  <div className="select-wrap">
+                    <select id="ed-gender" value={form.gender} onChange={set("gender")}>
+                      <option value="boys">Boys</option>
+                      <option value="girls">Girls</option>
+                      <option value="coed">Co-ed</option>
+                    </select>
+                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true">
+                      <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <label className="label" htmlFor="ed-total">Total rooms</label>
+                  <input id="ed-total" type="number" min="0" className="field" placeholder="optional" value={form.totalRooms} onChange={set("totalRooms")} />
+                </div>
+                <div>
+                  <label className="label" htmlFor="ed-avail">Rooms free now</label>
+                  <input id="ed-avail" type="number" min="0" className="field" placeholder="optional" value={form.availableRooms} onChange={set("availableRooms")} />
+                </div>
+              </div>
+            </fieldset>
+
+            {/* amenities */}
+            <fieldset className="border-0 p-0 m-0 mb-8">
+              <legend className="mono-label text-faded p-0 mb-4">What&rsquo;s included</legend>
+              <div className="flex flex-wrap gap-x-7 gap-y-3">
+                {AMENITIES.map((a) => (
+                  <label key={a.key} className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={form[a.key]}
+                      onChange={set(a.key)}
+                      className="checkbox"
+                    />
+                    <span className="font-semibold text-sm">{a.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            {/* photos */}
+            <fieldset className="border-0 p-0 m-0 mb-8">
+              <legend className="mono-label text-faded p-0 mb-4">Photos</legend>
+              <div className="flex flex-wrap gap-3">
+                {form.imageUrls.map((url) => (
+                  <div key={url} className="relative border-2 border-ink">
+                    <img src={url} alt="" className="w-20 h-20 object-cover block" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(url)}
+                      className="absolute -top-2.5 -right-2.5 bg-ink text-flyer w-6 h-6 grid place-content-center cursor-pointer border-0"
+                      aria-label="Remove photo"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+                <label className="w-20 h-20 border-2 border-dashed border-ink grid place-content-center cursor-pointer hover:bg-tape/40 transition-colors mono-label">
+                  {uploading ? "…" : "+ Add"}
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} disabled={uploading} />
+                </label>
+              </div>
+              {uploadError && <p className="mono-data text-sm text-red mt-3">{uploadError}</p>}
+            </fieldset>
+
+            {/* contact */}
+            <fieldset className="border-0 p-0 m-0 mb-2">
+              <legend className="mono-label text-faded p-0 mb-4">Contact on the flyer</legend>
+              <div className="space-y-4">
+                <div>
+                  <label className="label" htmlFor="ed-owner">Owner name *</label>
+                  <input id="ed-owner" className="field" placeholder="Who picks up the phone" value={form.ownerName} onChange={set("ownerName")} />
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label" htmlFor="ed-phone">Phone (10 digits) *</label>
+                    <input id="ed-phone" type="tel" className="field mono-data" placeholder="98XXXXXXXX" value={form.contactNumber} onChange={set("contactNumber")} />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="ed-alt">Alternate phone</label>
+                    <input id="ed-alt" type="tel" className="field mono-data" placeholder="optional" value={form.alternateContact} onChange={set("alternateContact")} />
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            {error && (
+              <p className="mono-data text-sm text-flyer bg-red px-4 py-3 mt-6" role="alert">
+                {error}
+              </p>
+            )}
+
+            <div className="flex flex-col-reverse sm:flex-row gap-3 mt-9">
+              <button
+                type="button"
+                onClick={() => navigate("/my-listings")}
+                className="btn flex-1"
+              >
+                Cancel
+              </button>
+              <button type="submit" disabled={saving} className="btn btn-green flex-1">
+                {saving ? "Re-pasting…" : "Save changes"}
+              </button>
             </div>
-            {uploadError && <p className="text-sm text-red-400 mt-1">{uploadError}</p>}
-          </div>
-
-          {error && (
-            <p className="text-sm text-red-400 bg-red-950/40 border border-red-900 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          <div className="flex gap-4 pt-4">
-            <button
-              type="button"
-              onClick={() => navigate("/my-listings")}
-              className="flex-1 px-6 py-3 border border-gray-700 text-white rounded-lg hover:bg-gray-800 font-semibold"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 px-6 py-3 bg-green-500 text-black rounded-lg hover:bg-green-600 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {saving ? "Saving…" : "Save Changes"}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

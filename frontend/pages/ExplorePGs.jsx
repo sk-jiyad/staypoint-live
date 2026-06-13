@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Wifi, UtensilsCrossed, Snowflake, Home, MapPin } from "lucide-react";
+import { Wifi, UtensilsCrossed, Snowflake, ImageOff, MapPin, ChevronDown, Search } from "lucide-react";
 import { Link } from "react-router-dom";
+import TearStrip from "../components/TearStrip.jsx";
 import { pgApi, ApiError } from "../src/lib/api.js";
 
+const inr = (n) => Number(n).toLocaleString("en-IN");
+
 const amenityIcons = {
-  wifi: <Wifi size={16} />,
-  food: <UtensilsCrossed size={16} />,
-  ac: <Snowflake size={16} />,
+  wifi: <Wifi size={15} />,
+  food: <UtensilsCrossed size={15} />,
+  ac: <Snowflake size={15} />,
 };
 
-const statusStyles = {
-  vacant: { cls: "bg-green-100 text-green-800", text: "Vacant" },
-  few: { cls: "bg-yellow-100 text-yellow-800", text: "Few left" },
-  full: { cls: "bg-red-100 text-red-800", text: "Full" },
+const statusPlates = {
+  vacant: { cls: "plate plate-vacant", text: "Vacant" },
+  few: { cls: "plate plate-few", text: "Few left" },
+  full: { cls: "plate plate-full", text: "House full" },
 };
 
 function statusFor(availableRooms) {
@@ -24,7 +27,7 @@ function statusFor(availableRooms) {
   return "vacant";
 }
 
-// Map a backend PGResponseDTO to the shape the cards render.
+// Map a backend PGResponseDTO to the shape the flyers render.
 function toCard(pg) {
   const amenities = [];
   if (pg.wifiAvailable) amenities.push("wifi");
@@ -36,6 +39,7 @@ function toCard(pg) {
     address: pg.address,
     landmark: pg.landmark,
     rent: pg.rentSingle,
+    contact: pg.contactNumber,
     amenities,
     image: pg.imageUrls && pg.imageUrls.length > 0 ? pg.imageUrls[0] : null,
     gender: pg.gender || null,
@@ -43,6 +47,9 @@ function toCard(pg) {
     status: statusFor(pg.availableRooms ?? null),
   };
 }
+
+const TILTS = [-1.1, 0.8, -0.5, 1.2, -0.9, 0.4];
+const TAPE_TILTS = [3, -4, 2, -3, 4, -2];
 
 export default function ExplorePGs() {
   const [pgs, setPgs] = useState([]);
@@ -122,176 +129,220 @@ export default function ExplorePGs() {
   }, [pgs, searchTerm, rentMax, gender, vacancyOnly, sortBy]);
 
   return (
-    <div className="min-h-screen w-screen bg-[#FFFEF9] py-12 px-4 md:px-10 lg:px-16">
-      <div className="w-full space-y-10">
-        {/* Search Bar */}
-        <div className="w-full">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* header */}
+      <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+        <div>
+          <p className="mono-label text-green-deep mb-2">Browse rooms</p>
+          <h1 className="disp text-5xl md:text-6xl">The board</h1>
+        </div>
+        {!loading && !error && (
+          <p className="mono-data text-sm text-faded border-2 border-ink bg-flyer px-3 py-1.5">
+            {filteredPGs.length} flyer{filteredPGs.length === 1 ? "" : "s"} up
+          </p>
+        )}
+      </div>
+
+      {/* toolbar — the filter form */}
+      <div className="border-2 border-ink bg-flyer p-5 md:p-6 mb-12">
+        <div className="relative mb-6">
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-faded" aria-hidden="true" />
           <input
             type="text"
-            placeholder="Search PG by name or location..."
+            placeholder="Search by PG name or area…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-6 py-4 bg-[#191919] border border-gray-700 rounded-lg text-white placeholder-white focus:border-green-500 focus:outline-none shadow-sm"
+            className="field !pl-11"
+            aria-label="Search by PG name or area"
           />
         </div>
 
-        {/* Filter Section */}
-        <div className="bg-[#191919] rounded-xl p-6 shadow-lg border border-gray-800">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
-            {/* Rent */}
-            <div className="min-w-0">
-              <label className="block text-white text-sm font-medium mb-2">
-                Max rent (single): ₹{(rentMax / 1000).toFixed(0)}k
-              </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+          {/* rent ceiling */}
+          <div>
+            <label htmlFor="rent-range" className="label">
+              Max rent (single) — <span className="mono-data text-ink">₹{inr(rentMax)}</span>
+            </label>
+            <input
+              id="rent-range"
+              type="range"
+              min="1000"
+              max="50000"
+              step="1000"
+              value={rentMax}
+              onChange={(e) => setRentMax(parseInt(e.target.value))}
+              className="range mt-3"
+            />
+          </div>
+
+          {/* gender */}
+          <div>
+            <p className="label" id="gender-label">For</p>
+            <div className="flex" role="group" aria-labelledby="gender-label">
+              {[
+                ["all", "All"],
+                ["boys", "Boys"],
+                ["girls", "Girls"],
+                ["coed", "Co-ed"],
+              ].map(([value, text]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className="seg flex-1"
+                  data-on={gender === value}
+                  onClick={() => setGender(value)}
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* vacancy */}
+          <div>
+            <p className="label">Vacancy</p>
+            <label className="flex items-center gap-3 cursor-pointer border-2 border-ink bg-flyer px-4 py-[0.62rem]">
               <input
-                type="range"
-                min="1000"
-                max="50000"
-                step="1000"
-                value={rentMax}
-                onChange={(e) => setRentMax(parseInt(e.target.value))}
-                className="w-full accent-[#87E64B]"
+                type="checkbox"
+                checked={vacancyOnly}
+                onChange={(e) => setVacancyOnly(e.target.checked)}
+                className="checkbox"
               />
-            </div>
+              <span className="mono-data text-sm">Rooms available only</span>
+            </label>
+          </div>
 
-            {/* Gender */}
-            <div className="min-w-0">
-              <label className="block text-white text-sm font-medium mb-2">Gender</label>
+          {/* sort */}
+          <div>
+            <label htmlFor="sort" className="label">Sort by</label>
+            <div className="select-wrap">
               <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="w-full px-3 py-2 bg-[#383838] rounded-lg text-white focus:border-green-500 focus:outline-none"
-              >
-                <option value="all">All</option>
-                <option value="boys">Boys</option>
-                <option value="girls">Girls</option>
-                <option value="coed">Co-ed</option>
-              </select>
-            </div>
-
-            {/* Vacancy */}
-            <div className="flex flex-col justify-center min-w-0">
-              <label className="text-white text-sm font-medium mb-2">Vacancy</label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={vacancyOnly}
-                  onChange={(e) => setVacancyOnly(e.target.checked)}
-                  className="w-4 h-4 accent-green-500"
-                />
-                <span className="text-gray-300 text-sm">Show only available</span>
-              </label>
-            </div>
-
-            {/* Sort By */}
-            <div className="min-w-0">
-              <label className="block text-white text-sm font-medium mb-2">Sort By</label>
-              <select
+                id="sort"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-3 py-2 bg-[#383838] rounded-lg text-white focus:border-green-500 focus:outline-none"
+                className="field"
               >
                 <option>Rent (Low→High)</option>
                 <option>Rent (High→Low)</option>
                 <option>Newest</option>
               </select>
+              <ChevronDown size={16} aria-hidden="true" />
             </div>
           </div>
         </div>
+      </div>
 
-        {/* States */}
-        {loading && (
-          <p className="text-center text-gray-500 text-lg mt-16">Loading PGs…</p>
-        )}
+      {/* states */}
+      {loading && (
+        <p className="mono-label text-faded text-center mt-20">Pasting up the board…</p>
+      )}
 
-        {!loading && error && (
-          <p className="text-center text-red-500 text-lg mt-16">{error}</p>
-        )}
+      {!loading && error && (
+        <div className="max-w-md mx-auto mt-16 border-2 border-red bg-flyer p-6 text-center">
+          <p className="mono-label text-red mb-2">Board unreachable</p>
+          <p className="text-faded text-sm">{error}</p>
+        </div>
+      )}
 
-        {/* PG Listings */}
-        {!loading && !error && filteredPGs.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {filteredPGs.map((pg) => (
-              <div
-                key={pg.id}
-                className="bg-[#191919] rounded-xl overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1 transition-transform duration-200 border border-gray-800"
-              >
+      {/* the flyers */}
+      {!loading && !error && filteredPGs.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-7 gap-y-12 pt-4">
+          {filteredPGs.map((pg, i) => (
+            <article
+              key={pg.id}
+              className="flyer flex flex-col"
+              style={{
+                "--tilt": `${TILTS[i % TILTS.length]}deg`,
+                "--tape-tilt": `${TAPE_TILTS[i % TAPE_TILTS.length]}deg`,
+              }}
+            >
+              <span className="tape" aria-hidden="true" />
+
+              {/* photo */}
+              <Link to={`/pg/${pg.id}`} className="block relative no-underline" aria-label={pg.name}>
                 {pg.image ? (
-                  <img src={pg.image} alt={pg.name} className="w-full h-48 object-cover" />
+                  <img src={pg.image} alt={pg.name} className="w-full h-44 object-cover border-b-2 border-ink" />
                 ) : (
-                  <div className="w-full h-48 bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
-                    <Home className="w-12 h-12 text-gray-600" />
+                  <div className="w-full h-44 border-b-2 border-ink bg-board grid place-content-center text-center text-faded">
+                    <ImageOff size={24} className="mx-auto mb-2" aria-hidden="true" />
+                    <span className="mono-label">No photo yet</span>
                   </div>
                 )}
-                <div className="p-5">
-                  <div className="flex justify-between items-start mb-2 gap-2">
-                    <div className="min-w-0">
-                      <h3 className="text-lg font-semibold text-white">{pg.name}</h3>
-                      <p className="text-sm text-gray-400 flex items-center gap-1">
-                        <MapPin size={14} /> {pg.address}
-                      </p>
-                    </div>
-                    {pg.status && (
-                      <span
-                        className={`shrink-0 px-2 py-1 rounded-full text-xs font-semibold ${statusStyles[pg.status].cls}`}
-                      >
-                        {statusStyles[pg.status].text}
-                      </span>
-                    )}
+                {pg.status && (
+                  <span className={`${statusPlates[pg.status].cls} absolute top-3 right-3`}>
+                    {statusPlates[pg.status].text}
+                  </span>
+                )}
+              </Link>
+
+              {/* body */}
+              <div className="p-5 flex-1 flex flex-col">
+                <h2 className="disp text-xl mb-1.5">
+                  <Link to={`/pg/${pg.id}`} className="no-underline text-ink hover:text-green-deep transition-colors">
+                    {pg.name}
+                  </Link>
+                </h2>
+                <p className="mono-data text-xs text-faded flex items-start gap-1.5 mb-4">
+                  <MapPin size={13} className="mt-0.5 flex-none" aria-hidden="true" />
+                  <span className="line-clamp-2">{pg.address}</span>
+                </p>
+
+                <div className="flex items-end justify-between mt-auto border-t-2 border-dashed border-ink/40 pt-3.5">
+                  <div>
+                    <p className="mono-label text-faded">Single / mo</p>
+                    <p className="disp text-2xl">₹{inr(pg.rent)}</p>
                   </div>
-
-                  <p className="text-xl font-bold text-[#87E64B] mb-3">
-                    ₹{pg.rent}/month
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex gap-1.5">
                     {pg.amenities.length > 0 ? (
-                      pg.amenities.map((amenity) => (
-                        <div
-                          key={amenity}
-                          className="p-1 bg-gray-800 rounded text-gray-300"
-                        >
-                          {amenityIcons[amenity]}
-                        </div>
+                      pg.amenities.map((a) => (
+                        <span key={a} className="border-2 border-ink p-1.5" title={a.toUpperCase()} aria-label={a}>
+                          {amenityIcons[a]}
+                        </span>
                       ))
                     ) : (
-                      <span className="text-xs text-gray-500">No listed amenities</span>
+                      <span className="mono-label text-faded self-end">Ask owner</span>
                     )}
                   </div>
-
-                  {(pg.gender || pg.availableRooms != null) && (
-                    <div className="flex items-center gap-3 text-sm text-gray-400 mb-4">
-                      {pg.gender && <span className="capitalize">{pg.gender}</span>}
-                      {pg.availableRooms != null && <span>{pg.availableRooms} rooms left</span>}
-                    </div>
-                  )}
-
-                  {pg.landmark && (
-                    <p className="text-sm text-gray-400 mb-4">Near {pg.landmark}</p>
-                  )}
-
-                  <Link
-                    to={`/pg/${pg.id}`}
-                    className="inline-block w-full text-center px-4 py-2 bg-[#87E64B] text-black rounded-lg hover:transition font-semibold cursor-pointer"
-                  >
-                    View Details
-                  </Link>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
 
-        {!loading && !error && filteredPGs.length === 0 && (
-          <div className="text-center mt-16">
-            <p className="text-gray-400 text-lg">
-              {pgs.length === 0
-                ? "No PGs listed yet. Be the first to add one!"
-                : "No PGs match your filters. Try adjusting them."}
-            </p>
-          </div>
-        )}
-      </div>
+                {(pg.gender || pg.availableRooms != null || pg.landmark) && (
+                  <p className="mono-data text-[11px] text-faded mt-3">
+                    {[
+                      pg.gender && pg.gender.charAt(0).toUpperCase() + pg.gender.slice(1),
+                      pg.availableRooms != null && `${pg.availableRooms} room${pg.availableRooms === 1 ? "" : "s"} left`,
+                      pg.landmark && `near ${pg.landmark}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                )}
+              </div>
+
+              {/* the tabs — tear one off */}
+              <TearStrip
+                text={pg.contact || "view flyer"}
+                count={5}
+                to={`/pg/${pg.id}`}
+                label={`Open ${pg.name}`}
+              />
+            </article>
+          ))}
+        </div>
+      )}
+
+      {!loading && !error && filteredPGs.length === 0 && (
+        <div className="max-w-md mx-auto mt-16 flyer p-8 text-center" style={{ "--tilt": "-1deg" }}>
+          <span className="tape" aria-hidden="true" />
+          <h2 className="disp text-2xl mb-2">
+            {pgs.length === 0 ? "The board is bare." : "Nothing under these filters."}
+          </h2>
+          <p className="text-faded text-sm">
+            {pgs.length === 0
+              ? "No PGs listed yet — be the first owner to paste a flyer."
+              : "Raise the rent ceiling or clear a filter and the flyers come back."}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
