@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Phone, ImageOff, Wifi, UtensilsCrossed, Snowflake } from "lucide-react"
 import TearStrip from "../components/TearStrip"
+import CountUp from "../components/CountUp.jsx"
+import { useReveal } from "../src/lib/useReveal.js"
 import { pgApi } from "../src/lib/api.js"
 
 const inr = (n) => Number(n).toLocaleString("en-IN")
@@ -47,7 +49,12 @@ function HeroFlyer({ pg }) {
   const image = pg.imageUrls && pg.imageUrls.length > 0 ? pg.imageUrls[0] : null
 
   return (
-    <div className="flyer w-full max-w-sm" style={{ "--tilt": "1.6deg", "--tape-tilt": "2deg" }}>
+    <div
+      className="flyer w-full max-w-sm"
+      data-reveal
+      data-reveal-index={0}
+      style={{ "--tilt": "1.6deg", "--tape-tilt": "2deg" }}
+    >
       <span className="tape" aria-hidden="true" />
       <div className="p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
@@ -97,6 +104,10 @@ export default function Landing() {
   const [featured, setFeatured] = useState(null)
   const [count, setCount] = useState(null)
 
+  // Re-arm the scroll reveal once the featured flyer mounts (it arrives after
+  // the fetch). The how-it-works and testimonial flyers are observed on mount.
+  useReveal([featured])
+
   useEffect(() => {
     let active = true
     pgApi
@@ -139,18 +150,22 @@ export default function Landing() {
             </Link>
           </div>
 
-          {/* honest stats */}
+          {/* honest stats — the live count ticks up as it lands */}
           <div className="mt-12 grid grid-cols-3 max-w-md border-2 border-ink divide-x-2 divide-ink bg-flyer">
-            {[
-              [count == null ? "—" : count, "flyers live"],
-              ["₹0", "brokerage"],
-              ["2 taps", "to call"],
-            ].map(([big, small]) => (
-              <div key={small} className="p-4 text-center">
-                <p className="disp text-2xl mono-data">{big}</p>
-                <p className="mono-label text-faded mt-1">{small}</p>
-              </div>
-            ))}
+            <div className="p-4 text-center">
+              <p className="disp text-2xl mono-data">
+                <CountUp end={count} />
+              </p>
+              <p className="mono-label text-faded mt-1">flyers live</p>
+            </div>
+            <div className="p-4 text-center">
+              <p className="disp text-2xl mono-data">₹0</p>
+              <p className="mono-label text-faded mt-1">brokerage</p>
+            </div>
+            <div className="p-4 text-center">
+              <p className="disp text-2xl mono-data">2 taps</p>
+              <p className="mono-label text-faded mt-1">to call</p>
+            </div>
           </div>
         </div>
 
@@ -240,8 +255,14 @@ export default function Landing() {
               ["01", "Scan the board", "Browse every PG in town in one place. Filter by rent, gender and vacancy until the list is yours."],
               ["02", "Tear a tab", "Open a flyer, check the photos and the per-room rents, then take the owner's number with you."],
               ["03", "Make the call", "Call or WhatsApp the owner directly. Visit, haggle, move in. We were never in the middle."],
-            ].map(([num, head, body]) => (
-              <div key={num} className="flyer p-8" style={{ "--tilt": `${(Number(num) - 2) * 0.7}deg` }}>
+            ].map(([num, head, body], i) => (
+              <div
+                key={num}
+                className="flyer p-8"
+                data-reveal
+                data-reveal-index={i}
+                style={{ "--tilt": `${(Number(num) - 2) * 0.7}deg` }}
+              >
                 <p className="mono-data font-bold text-5xl text-green-deep mb-4">{num}</p>
                 <h3 className="disp text-2xl mb-3">{head}</h3>
                 <p className="text-faded leading-relaxed">{body}</p>
@@ -286,7 +307,13 @@ export default function Landing() {
             { name: "Rohan Gupta", role: "Student", text: "Photos on the listing matched the actual room. That alone is rare." },
             { name: "Anjali Desai", role: "PG owner", text: "Editing my flyer when a room fills up takes seconds. The board stays honest." },
           ].map((t, i) => (
-            <figure key={t.name} className="flyer p-7" style={{ "--tilt": `${[(-1.4), 1, -0.6, 1.3, -1, 0.7][i]}deg`, "--tape-tilt": `${[3, -4, 2, -2, 4, -3][i]}deg` }}>
+            <figure
+              key={t.name}
+              className="flyer p-7"
+              data-reveal
+              data-reveal-index={i}
+              style={{ "--tilt": `${[(-1.4), 1, -0.6, 1.3, -1, 0.7][i]}deg`, "--tape-tilt": `${[3, -4, 2, -2, 4, -3][i]}deg` }}
+            >
               <span className="tape" aria-hidden="true" />
               <blockquote className="text-ink leading-relaxed mb-5">"{t.text}"</blockquote>
               <figcaption>

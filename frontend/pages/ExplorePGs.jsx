@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Wifi, UtensilsCrossed, Snowflake, ImageOff, MapPin, ChevronDown, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import TearStrip from "../components/TearStrip.jsx";
+import { useReveal } from "../src/lib/useReveal.js";
 import { pgApi, ApiError } from "../src/lib/api.js";
 
 const inr = (n) => Number(n).toLocaleString("en-IN");
@@ -128,6 +129,10 @@ export default function ExplorePGs() {
     return data;
   }, [pgs, searchTerm, rentMax, gender, vacancyOnly, sortBy]);
 
+  // Pin the flyers up as they scroll in; re-arms when the result set changes.
+  // Cards already revealed stay put, so filtering doesn't re-trigger the animation.
+  useReveal([filteredPGs.length]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* header */}
@@ -251,6 +256,8 @@ export default function ExplorePGs() {
             <article
               key={pg.id}
               className="flyer flex flex-col"
+              data-reveal
+              data-reveal-index={i % 4}
               style={{
                 "--tilt": `${TILTS[i % TILTS.length]}deg`,
                 "--tape-tilt": `${TAPE_TILTS[i % TAPE_TILTS.length]}deg`,

@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Pencil, Trash2, Eye, Plus } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
 import { useRole } from "../src/lib/role.js";
+import { useReveal } from "../src/lib/useReveal.js";
 import { pgApi, ApiError } from "../src/lib/api.js";
 import TearStrip from "../components/TearStrip.jsx";
 
@@ -43,6 +44,10 @@ export default function MyListings() {
   useEffect(() => {
     if (isOwner) load();
   }, [isOwner, load]);
+
+  // Pin the flyers up as they scroll in; re-arms when the listings load.
+  // (Called before the early returns below so hook order stays stable.)
+  useReveal([pgs.length]);
 
   const handleDelete = async (pg) => {
     if (!window.confirm(`Delete "${pg.name}"? This can't be undone.`)) return;
@@ -139,6 +144,8 @@ export default function MyListings() {
                 <article
                   key={pg.id}
                   className="flyer flex flex-col"
+                  data-reveal
+                  data-reveal-index={i % 3}
                   style={{ "--tilt": TILTS[i % TILTS.length] }}
                 >
                   <span className="tape" aria-hidden="true" />
