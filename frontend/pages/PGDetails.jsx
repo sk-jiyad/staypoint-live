@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import TearStrip from "../components/TearStrip.jsx";
+import { useReveal } from "../src/lib/useReveal.js";
 import { pgApi, ApiError } from "../src/lib/api.js";
 
 const inr = (n) => Number(n).toLocaleString("en-IN");
@@ -44,6 +45,8 @@ export default function PGDetails() {
       active = false;
     };
   }, [id]);
+
+  useReveal([pg?.id]);
 
   if (loading) {
     return <p className="mono-label text-faded text-center mt-24">Unpinning the flyer…</p>;
@@ -224,7 +227,7 @@ export default function PGDetails() {
 
         {/* RIGHT — the contact flyer */}
         <aside className="lg:sticky lg:top-32">
-          <div className="flyer" style={{ "--tilt": "1deg", "--tape-tilt": "-3deg" }}>
+          <div className="flyer" data-reveal data-reveal-index={0} style={{ "--tilt": "1deg", "--tape-tilt": "-3deg" }}>
             <span className="tape" aria-hidden="true" />
             <div className="p-6">
               <p className="mono-label text-faded mb-1.5">Contact owner</p>
@@ -234,6 +237,10 @@ export default function PGDetails() {
               <a
                 href={`tel:${pg.contactNumber}`}
                 className="btn btn-green w-full mb-3"
+                onClick={(e) => {
+                  const tab = e.currentTarget.closest(".flyer")?.querySelector(".tear-tab");
+                  tab?.classList.add("tearing");
+                }}
               >
                 <Phone size={16} aria-hidden="true" /> Call owner
               </a>
