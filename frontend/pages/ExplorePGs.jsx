@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Wifi, UtensilsCrossed, Snowflake, ImageOff, MapPin, ChevronDown, Search } from "lucide-react";
+import { Wifi, UtensilsCrossed, Snowflake, ImageOff, MapPin, ChevronDown, Search, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import TearStrip from "../components/TearStrip.jsx";
 import { useReveal } from "../src/lib/useReveal.js";
@@ -46,6 +46,10 @@ function toCard(pg) {
     gender: pg.gender || null,
     availableRooms: pg.availableRooms ?? null,
     status: statusFor(pg.availableRooms ?? null),
+    verified: Boolean(pg.verified),
+    avgRating: pg.avgRating ?? null,
+    reviewCount: pg.reviewCount ?? 0,
+    nearbyCollege: pg.nearbyCollege || null,
   };
 }
 
@@ -62,6 +66,7 @@ export default function ExplorePGs() {
   const [rentMax, setRentMax] = useState(50000);
   const [gender, setGender] = useState("all");
   const [vacancyOnly, setVacancyOnly] = useState(false);
+  const [college, setCollege] = useState("all");
 
   useEffect(() => {
     let active = true;
@@ -112,6 +117,10 @@ export default function ExplorePGs() {
       data = data.filter((pg) => pg.status === "vacant" || pg.status === "few");
     }
 
+    if (college !== "all") {
+      data = data.filter((pg) => pg.nearbyCollege === college);
+    }
+
     switch (sortBy) {
       case "Rent (Low→High)":
         data.sort((a, b) => a.rent - b.rent);
@@ -127,7 +136,12 @@ export default function ExplorePGs() {
     }
 
     return data;
-  }, [pgs, searchTerm, rentMax, gender, vacancyOnly, sortBy]);
+  }, [pgs, searchTerm, rentMax, gender, vacancyOnly, college, sortBy]);
+
+  const colleges = useMemo(
+    () => [...new Set(pgs.map((p) => p.nearbyCollege).filter(Boolean))].sort(),
+    [pgs]
+  );
 
   // Pin the flyers up as they scroll in; re-arms when the result set changes.
   // Cards already revealed stay put, so filtering doesn't re-trigger the animation.
@@ -162,7 +176,7 @@ export default function ExplorePGs() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
           {/* rent ceiling */}
           <div>
             <label htmlFor="rent-range" className="label">
@@ -215,6 +229,25 @@ export default function ExplorePGs() {
               />
               <span className="mono-data text-sm">Rooms available only</span>
             </label>
+          </div>
+
+          {/* college */}
+          <div>
+            <label htmlFor="college" className="label">Near college</label>
+            <div className="select-wrap">
+              <select
+                id="college"
+                value={college}
+                onChange={(e) => setCollege(e.target.value)}
+                className="field"
+              >
+                <option value="all">Any college</option>
+                {colleges.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <ChevronDown size={16} aria-hidden="true" />
+            </div>
           </div>
 
           {/* sort */}
@@ -280,6 +313,11 @@ export default function ExplorePGs() {
                     {statusPlates[pg.status].text}
                   </span>
                 )}
+                {pg.verified && (
+                  <span className="plate plate-vacant absolute top-3 left-3 inline-flex items-center gap-1">
+                    <ShieldCheck size={12} /> Verified
+                  </span>
+                )}
               </Link>
 
               {/* body */}
@@ -289,10 +327,16 @@ export default function ExplorePGs() {
                     {pg.name}
                   </Link>
                 </h2>
-                <p className="mono-data text-xs text-faded flex items-start gap-1.5 mb-4">
+                <p className="mono-data text-xs text-faded flex items-start gap-1.5 mb-2">
                   <MapPin size={13} className="mt-0.5 flex-none" aria-hidden="true" />
                   <span className="line-clamp-2">{pg.address}</span>
                 </p>
+                {pg.avgRating != null && (
+                  <p className="mono-data text-xs text-green-deep flex items-center gap-1 mb-4">
+                    ★ {pg.avgRating.toFixed(1)}
+                    <span className="text-faded">({pg.reviewCount})</span>
+                  </p>
+                )}
 
                 <div className="flex items-end justify-between mt-auto border-t-2 border-dashed border-ink/40 pt-3.5">
                   <div>
@@ -312,11 +356,12 @@ export default function ExplorePGs() {
                   </div>
                 </div>
 
-                {(pg.gender || pg.availableRooms != null || pg.landmark) && (
+                {(pg.gender || pg.availableRooms != null || pg.landmark || pg.nearbyCollege) && (
                   <p className="mono-data text-[11px] text-faded mt-3">
                     {[
                       pg.gender && pg.gender.charAt(0).toUpperCase() + pg.gender.slice(1),
                       pg.availableRooms != null && `${pg.availableRooms} room${pg.availableRooms === 1 ? "" : "s"} left`,
+                      pg.nearbyCollege && `near ${pg.nearbyCollege}`,
                       pg.landmark && `near ${pg.landmark}`,
                     ]
                       .filter(Boolean)

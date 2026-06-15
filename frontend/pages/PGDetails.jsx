@@ -13,21 +13,49 @@ import {
   ChevronRight,
   Check,
   X,
+  Star,
+  ShieldCheck,
 } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
 import TearStrip from "../components/TearStrip.jsx";
 import { useReveal } from "../src/lib/useReveal.js";
-import { pgApi, ApiError } from "../src/lib/api.js";
+import { pgApi, reviewApi, ApiError } from "../src/lib/api.js";
 
 const inr = (n) => Number(n).toLocaleString("en-IN");
+
+function Stars({ value = 0, size = 15 }) {
+  const v = Math.round(value);
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          size={size}
+          className={n <= v ? "text-green-deep fill-green-deep" : "text-ink/25"}
+        />
+      ))}
+    </span>
+  );
+}
 
 export default function PGDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isSignedIn } = useAuth();
   const [pg, setPg] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
+
+  const [reviews, setReviews] = useState([]);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSaving, setReviewSaving] = useState(false);
+
+  const loadReviews = () =>
+    reviewApi.list(id).then(setReviews).catch(() => setReviews([]));
 
   useEffect(() => {
     let active = true;
@@ -41,12 +69,32 @@ export default function PGDetails() {
         else setError("Could not load this PG. Is the backend running?");
       })
       .finally(() => active && setLoading(false));
+    loadReviews();
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useReveal([pg?.id]);
+
+  const submitReview = async (e) => {
+    e.preventDefault();
+    setReviewError("");
+    setReviewSaving(true);
+    try {
+      await reviewApi.create(id, { rating: Number(rating), comment });
+      setComment("");
+      await loadReviews();
+      setPg(await pgApi.get(id));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) setReviewError("Please log in to leave a review.");
+      else if (err instanceof ApiError && err.status === 403) setReviewError("You can't review your own listing.");
+      else setReviewError(err.message || "Could not submit review.");
+    } finally {
+      setReviewSaving(false);
+    }
+  };
 
   if (loading) {
     return <p className="mono-label text-faded text-center mt-24">Unpinning the flyer…</p>;
@@ -67,6 +115,9 @@ export default function PGDetails() {
     ["WiFi", pg.wifiAvailable],
     ["Food / mess", pg.foodProvided],
     ["AC rooms", pg.acAvailable],
+    ["Laundry", pg.laundryAvailable],
+    ["Parking", pg.parkingAvailable],
+    ["Attached bath", pg.attachedBathroom],
   ];
 
   const tiers = [
@@ -98,8 +149,21 @@ export default function PGDetails() {
           {pg.landmark && (
             <p className="mono-data text-sm text-green-deep mt-1.5 pl-6">↳ near {pg.landmark}</p>
           )}
-          {(pg.gender || pg.availableRooms != null) && (
+          {pg.avgRating != null && (
+            <div className="flex items-center gap-2 mt-3">
+              <Stars value={pg.avgRating} />
+              <span className="mono-data text-sm text-faded">
+                {pg.avgRating.toFixed(1)} · {pg.reviewCount || 0} review{pg.reviewCount === 1 ? "" : "s"}
+              </span>
+            </div>
+          )}
+          {(pg.gender || pg.availableRooms != null || pg.verified || pg.nearbyCollege) && (
             <div className="flex flex-wrap gap-2 mt-4">
+              {pg.verified && (
+                <span className="plate plate-vacant !rotate-0 inline-flex items-center gap-1">
+                  <ShieldCheck size={14} /> Verified
+                </span>
+              )}
               {pg.gender && (
                 <span className="plate plate-vacant !rotate-0 capitalize">For {pg.gender}</span>
               )}
@@ -107,6 +171,9 @@ export default function PGDetails() {
                 <span className="plate !rotate-0 bg-flyer">
                   {pg.availableRooms} room{pg.availableRooms === 1 ? "" : "s"} available
                 </span>
+              )}
+              {pg.nearbyCollege && (
+                <span className="plate !rotate-0 bg-flyer">near {pg.nearbyCollege}</span>
               )}
             </div>
           )}
@@ -220,8 +287,62 @@ export default function PGDetails() {
               ))}
             </ul>
             <p className="mono-data text-xs text-faded mt-4">
-              Laundry, parking and the rest — ask the owner when you call.
+              Anything else — ask the owner when you call.
             </p>
+          </section>
+
+          {/* reviews */}
+          <section className="border-2 border-ink bg-flyer p-6">
+            <h2 className="mono-label text-faded mb-5">
+              Reviews{reviews.length > 0 ? ` · ${reviews.length}` : ""}
+            </h2>
+
+            {reviews.length === 0 ? (
+              <p className="text-faded text-sm mb-5">No reviews yet. Be the first to pin one up.</p>
+            ) : (
+              <ul className="space-y-4 mb-6 list-none p-0 m-0">
+                {reviews.map((r) => (
+                  <li key={r.id} className="border-b-2 border-dashed border-ink/30 pb-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="disp text-lg">{r.authorName}</span>
+                      <Stars value={r.rating} size={13} />
+                    </div>
+                    {r.comment && <p className="text-sm text-faded mt-1">{r.comment}</p>}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {isSignedIn ? (
+              <form onSubmit={submitReview} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="mono-label text-faded">Your rating</span>
+                  <div className="select-wrap !w-auto">
+                    <select value={rating} onChange={(e) => setRating(e.target.value)}>
+                      {[5, 4, 3, 2, 1].map((n) => (
+                        <option key={n} value={n}>{n} ★</option>
+                      ))}
+                    </select>
+                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true">
+                      <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  </div>
+                </div>
+                <textarea
+                  className="field"
+                  rows={3}
+                  placeholder="How was it? (optional)"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                />
+                {reviewError && <p className="mono-data text-sm text-red">{reviewError}</p>}
+                <button type="submit" disabled={reviewSaving} className="btn btn-green">
+                  {reviewSaving ? "Pinning…" : "Pin my review"}
+                </button>
+              </form>
+            ) : (
+              <p className="text-faded text-sm">Log in to leave a review.</p>
+            )}
           </section>
         </div>
 

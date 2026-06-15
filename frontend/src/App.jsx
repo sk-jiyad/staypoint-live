@@ -11,6 +11,8 @@ import PGDetails from "../pages/PGDetails";
 import Login from "../pages/Login";
 import MyListings from "../pages/MyListings";
 import EditPG from "../pages/EditPG";
+import Admin from "../pages/Admin";
+import ChatWidget from "../components/ChatWidget";
 import "./index.css";
 
 function ScrollToTop() {
@@ -63,10 +65,12 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/my-listings" element={<MyListings />} />
           <Route path="/edit-pg/:id" element={<EditPG />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />
+      <ChatWidget />
       <Analytics />
     </div>
   );

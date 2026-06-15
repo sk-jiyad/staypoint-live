@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jiyad.dto.PGCreateDTO;
 import com.jiyad.exception.ResourceNotFoundException;
 import com.jiyad.service.PGService;
+import com.jiyad.service.RecommendationService;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ class PGControllerTest {
     @Autowired private ObjectMapper objectMapper;
 
     @MockitoBean private PGService pgService;
+    @MockitoBean private RecommendationService recommendationService;
     @MockitoBean private JwtDecoder jwtDecoder;
 
     @Test

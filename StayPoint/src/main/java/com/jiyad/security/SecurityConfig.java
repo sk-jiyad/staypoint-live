@@ -27,7 +27,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/chat").permitAll()
+                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/pgs/mine").hasAuthority("ROLE_OWNER")
+                .requestMatchers(HttpMethod.POST, "/api/pgs/*/reviews").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/pgs/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/pgs").hasAuthority("ROLE_OWNER")
                 .requestMatchers(HttpMethod.PUT, "/api/pgs/**").hasAuthority("ROLE_OWNER")

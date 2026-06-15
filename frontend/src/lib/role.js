@@ -5,5 +5,10 @@ import { useUser } from "@clerk/clerk-react";
 export function useRole() {
   const { user } = useUser();
   const role = user?.unsafeMetadata?.role ?? null;
-  return { role, isOwner: role === "owner", isRenter: role === "renter" };
+  return {
+    role,
+    isOwner: role === "owner",
+    isRenter: role === "renter",
+    isAdmin: role === "admin",
+  };
 }

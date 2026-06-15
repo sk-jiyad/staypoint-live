@@ -26,7 +26,7 @@ function BoardLink({ to, children, onClick }) {
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
-  const { isOwner } = useRole()
+  const { isOwner, isAdmin } = useRole()
   const close = () => setIsOpen(false)
 
   return (
@@ -55,6 +55,7 @@ export default function Navbar() {
               <BoardLink to="/explore">Browse rooms</BoardLink>
               {isOwner && <BoardLink to="/add-pg">Paste a flyer</BoardLink>}
               {isOwner && <BoardLink to="/my-listings">My flyers</BoardLink>}
+              {isAdmin && <BoardLink to="/admin">Admin</BoardLink>}
             </div>
 
             {/* auth */}
@@ -97,6 +98,7 @@ export default function Navbar() {
                       ["/my-listings", "My flyers"],
                     ]
                   : []),
+                ...(isAdmin ? [["/admin", "Admin"]] : []),
               ].map(([to, text]) => (
                 <Link
                   key={to}
