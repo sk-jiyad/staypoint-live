@@ -176,9 +176,9 @@ export default function ExplorePGs() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-stretch">
           {/* rent ceiling */}
-          <div>
+          <div className="flex flex-col">
             <label htmlFor="rent-range" className="label">
               Max rent (single) — <span className="mono-data text-ink">₹{inr(rentMax)}</span>
             </label>
@@ -190,24 +190,24 @@ export default function ExplorePGs() {
               step="1000"
               value={rentMax}
               onChange={(e) => setRentMax(parseInt(e.target.value))}
-              className="range mt-3"
+              className="range mt-auto"
             />
           </div>
 
           {/* gender */}
-          <div>
+          <div className="flex flex-col">
             <p className="label" id="gender-label">For</p>
-            <div className="flex" role="group" aria-labelledby="gender-label">
+            <div className="flex mt-auto h-[3.25rem]" role="group" aria-labelledby="gender-label">
               {[
                 ["all", "All"],
                 ["boys", "Boys"],
                 ["girls", "Girls"],
-                ["coed", "Co-ed"],
+                ["coed", "Coed"],
               ].map(([value, text]) => (
                 <button
                   key={value}
                   type="button"
-                  className="seg flex-1"
+                  className="seg flex-1 h-full whitespace-nowrap"
                   data-on={gender === value}
                   onClick={() => setGender(value)}
                 >
@@ -218,23 +218,23 @@ export default function ExplorePGs() {
           </div>
 
           {/* vacancy */}
-          <div>
+          <div className="flex flex-col">
             <p className="label">Vacancy</p>
-            <label className="flex items-center gap-3 cursor-pointer border-2 border-ink bg-flyer px-4 py-[0.62rem]">
+            <label className="field flex items-center gap-3 cursor-pointer mt-auto whitespace-nowrap">
               <input
                 type="checkbox"
                 checked={vacancyOnly}
                 onChange={(e) => setVacancyOnly(e.target.checked)}
-                className="checkbox"
+                className="checkbox flex-none"
               />
-              <span className="mono-data text-sm">Rooms available only</span>
+              <span className="mono-data text-sm">Available only</span>
             </label>
           </div>
 
           {/* college */}
-          <div>
+          <div className="flex flex-col">
             <label htmlFor="college" className="label">Near college</label>
-            <div className="select-wrap">
+            <div className="select-wrap mt-auto">
               <select
                 id="college"
                 value={college}
@@ -251,9 +251,9 @@ export default function ExplorePGs() {
           </div>
 
           {/* sort */}
-          <div>
+          <div className="flex flex-col">
             <label htmlFor="sort" className="label">Sort by</label>
-            <div className="select-wrap">
+            <div className="select-wrap mt-auto">
               <select
                 id="sort"
                 value={sortBy}
