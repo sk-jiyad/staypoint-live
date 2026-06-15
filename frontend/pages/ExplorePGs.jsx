@@ -176,7 +176,7 @@ export default function ExplorePGs() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_auto_1fr_1fr_1fr] gap-6 items-stretch">
           {/* rent ceiling */}
           <div className="flex flex-col">
             <label htmlFor="rent-range" className="label">
