@@ -302,7 +302,7 @@ export default function EditPG() {
                 <div>
                   <label className="label" htmlFor="ed-gender">For</label>
                   <div className="select-wrap">
-                    <select id="ed-gender" value={form.gender} onChange={set("gender")}>
+                    <select id="ed-gender" className="field" value={form.gender} onChange={set("gender")}>
                       <option value="boys">Boys</option>
                       <option value="girls">Girls</option>
                       <option value="coed">Co-ed</option>
