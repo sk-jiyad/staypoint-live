@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Wifi, UtensilsCrossed, Snowflake, ImageOff, MapPin, ChevronDown, Search, ShieldCheck } from "lucide-react";
+import { Wifi, UtensilsCrossed, Snowflake, ImageOff, MapPin, Search, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import TearStrip from "../components/TearStrip.jsx";
+import StyledSelect from "../components/StyledSelect.jsx";
 import { useReveal } from "../src/lib/useReveal.js";
 import { pgApi, ApiError } from "../src/lib/api.js";
 
@@ -233,38 +234,34 @@ export default function ExplorePGs() {
 
           {/* college */}
           <div className="flex flex-col">
-            <label htmlFor="college" className="label">Near college</label>
-            <div className="select-wrap mt-auto">
-              <select
-                id="college"
+            <label className="label" id="college-label">Near college</label>
+            <div className="mt-auto">
+              <StyledSelect
+                ariaLabel="Filter by nearby college"
                 value={college}
-                onChange={(e) => setCollege(e.target.value)}
-                className="field"
-              >
-                <option value="all">Any college</option>
-                {colleges.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              <ChevronDown size={16} aria-hidden="true" />
+                onChange={setCollege}
+                options={[
+                  { value: "all", label: "Any college" },
+                  ...colleges.map((c) => ({ value: c, label: c })),
+                ]}
+              />
             </div>
           </div>
 
           {/* sort */}
           <div className="flex flex-col">
-            <label htmlFor="sort" className="label">Sort by</label>
-            <div className="select-wrap mt-auto">
-              <select
-                id="sort"
+            <label className="label" id="sort-label">Sort by</label>
+            <div className="mt-auto">
+              <StyledSelect
+                ariaLabel="Sort listings"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="field"
-              >
-                <option>Rent (Low→High)</option>
-                <option>Rent (High→Low)</option>
-                <option>Newest</option>
-              </select>
-              <ChevronDown size={16} aria-hidden="true" />
+                onChange={setSortBy}
+                options={[
+                  { value: "Rent (Low→High)", label: "Rent (Low→High)" },
+                  { value: "Rent (High→Low)", label: "Rent (High→Low)" },
+                  { value: "Newest", label: "Newest" },
+                ]}
+              />
             </div>
           </div>
         </div>
