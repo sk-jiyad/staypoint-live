@@ -144,7 +144,7 @@ export default function PGDetails() {
           <h1 className="disp text-4xl md:text-6xl mb-3">{pg.name}</h1>
           <p className="mono-data text-sm text-faded flex items-start gap-2">
             <MapPin size={15} className="mt-0.5 flex-none" aria-hidden="true" />
-            {pg.address}
+            {pg.address}{pg.city ? `, ${pg.city}` : ""}
           </p>
           {pg.landmark && (
             <p className="mono-data text-sm text-green-deep mt-1.5 pl-6">↳ near {pg.landmark}</p>

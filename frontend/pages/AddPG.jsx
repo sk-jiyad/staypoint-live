@@ -81,22 +81,31 @@ export default function AddPG() {
 
   const submitPG = async () => {
     setError("")
-    if (
-      formData.totalRooms !== "" &&
-      formData.availableRooms !== "" &&
-      Number(formData.availableRooms) > Number(formData.totalRooms)
-    ) {
+    if (formData.city.trim() === "") {
+      setError("City is required.")
+      setStep(1)
+      return
+    }
+    if (formData.totalRooms === "" || formData.availableRooms === "") {
+      setError("Total rooms and rooms free now are required.")
+      setStep(2)
+      return
+    }
+    if (Number(formData.availableRooms) > Number(formData.totalRooms)) {
       setError("Rooms free now can't be more than total rooms.")
       setStep(2)
       return
     }
     setSubmitting(true)
-    // Map the wizard fields onto the backend PGCreateDTO. (city/email aren't modelled.)
+    // Map the wizard fields onto the backend PGCreateDTO. (email isn't modelled.)
     const payload = {
       name: formData.pgName,
       ownerName: formData.ownerName,
       contactNumber: formData.phone.trim(),
       address: formData.address,
+      city: formData.city.trim(),
+      totalRooms: Number(formData.totalRooms),
+      availableRooms: Number(formData.availableRooms),
       rentSingle: Number(formData.rentSingle),
       rentDouble: Number(formData.rentDouble),
       foodProvided: formData.amenities.includes("Food"),
@@ -110,8 +119,6 @@ export default function AddPG() {
     if (formData.imageUrls.length > 0) payload.imageUrls = formData.imageUrls
     payload.gender = formData.gender
     if (formData.college !== "") payload.nearbyCollege = formData.college
-    if (formData.totalRooms !== "") payload.totalRooms = Number(formData.totalRooms)
-    if (formData.availableRooms !== "") payload.availableRooms = Number(formData.availableRooms)
 
     try {
       const created = await pgApi.create(payload)
@@ -246,7 +253,7 @@ export default function AddPG() {
                   value={formData.address} onChange={handleInputChange} className="field" />
               </div>
               <div>
-                <label htmlFor="city" className="label">City (optional)</label>
+                <label htmlFor="city" className="label">City *</label>
                 <input id="city" type="text" name="city" placeholder="e.g. Asansol"
                   value={formData.city} onChange={handleInputChange} className="field" />
               </div>
@@ -292,12 +299,12 @@ export default function AddPG() {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="totalRooms" className="label">Total rooms (optional)</label>
+                  <label htmlFor="totalRooms" className="label">Total rooms *</label>
                   <input id="totalRooms" type="number" name="totalRooms" placeholder="12"
                     value={formData.totalRooms} onChange={handleInputChange} className="field" />
                 </div>
                 <div>
-                  <label htmlFor="availableRooms" className="label">Rooms available now (optional)</label>
+                  <label htmlFor="availableRooms" className="label">Rooms free now *</label>
                   <input id="availableRooms" type="number" name="availableRooms" placeholder="3"
                     value={formData.availableRooms} onChange={handleInputChange} className="field" />
                 </div>
