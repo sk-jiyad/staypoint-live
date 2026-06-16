@@ -7,6 +7,7 @@ import { useAuth } from "@clerk/clerk-react"
 import { useRole } from "../src/lib/role.js"
 import { pgApi, ApiError } from "../src/lib/api.js"
 import { uploadImage } from "../src/lib/cloudinary.js"
+import { COLLEGES } from "../src/lib/colleges.js"
 
 const STEPS = ["Basics", "Rooms & rent", "Amenities", "Photos", "Owner"]
 
@@ -226,15 +227,21 @@ export default function AddPG() {
               </div>
               <div>
                 <label htmlFor="college" className="label">Nearby college (optional)</label>
-                <div className="select-wrap">
-                  <select id="college" name="college" value={formData.college} onChange={handleInputChange} className="field">
-                    <option value="">Select a college</option>
-                    <option value="Delhi University">Delhi University</option>
-                    <option value="Jamia Millia">Jamia Millia</option>
-                    <option value="IP University">IP University</option>
-                  </select>
-                  <ChevronDown size={16} aria-hidden="true" />
-                </div>
+                <input
+                  id="college"
+                  name="college"
+                  list="india-colleges"
+                  autoComplete="off"
+                  placeholder="Search or type your college…"
+                  value={formData.college}
+                  onChange={handleInputChange}
+                  className="field"
+                />
+                <datalist id="india-colleges">
+                  {COLLEGES.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </div>
             </fieldset>
           )}

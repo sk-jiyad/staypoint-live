@@ -7,6 +7,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { useRole } from "../src/lib/role.js";
 import { pgApi, ApiError } from "../src/lib/api.js";
 import { uploadImage } from "../src/lib/cloudinary.js";
+import { COLLEGES } from "../src/lib/colleges.js";
 
 const AMENITIES = [
   { key: "wifiAvailable", label: "Wi-Fi" },
@@ -293,17 +294,20 @@ export default function EditPG() {
                 </div>
                 <div>
                   <label className="label" htmlFor="ed-college">Nearby college</label>
-                  <div className="select-wrap">
-                    <select id="ed-college" value={form.nearbyCollege} onChange={set("nearbyCollege")}>
-                      <option value="">None</option>
-                      <option value="Delhi University">Delhi University</option>
-                      <option value="Jamia Millia">Jamia Millia</option>
-                      <option value="IP University">IP University</option>
-                    </select>
-                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true">
-                      <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="2" />
-                    </svg>
-                  </div>
+                  <input
+                    id="ed-college"
+                    className="field"
+                    list="india-colleges"
+                    autoComplete="off"
+                    placeholder="Search or type your college…"
+                    value={form.nearbyCollege}
+                    onChange={set("nearbyCollege")}
+                  />
+                  <datalist id="india-colleges">
+                    {COLLEGES.map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
                 </div>
               </div>
             </fieldset>
