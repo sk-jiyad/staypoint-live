@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Pencil, Trash2, Eye, Plus } from "lucide-react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useClerk } from "@clerk/clerk-react";
 import { useRole } from "../src/lib/role.js";
 import { useReveal } from "../src/lib/useReveal.js";
 import { pgApi, ApiError } from "../src/lib/api.js";
@@ -17,6 +17,7 @@ export default function MyListings() {
   const navigate = useNavigate();
   const { isSignedIn } = useAuth();
   const { isOwner } = useRole();
+  const { signOut } = useClerk();
 
   const [pgs, setPgs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,9 +76,24 @@ export default function MyListings() {
               ? "Your account isn't a PG-owner account."
               : "Log in as a PG owner to manage your flyers."}
           </p>
-          <Link to="/login" className="btn btn-green w-full">
-            {isSignedIn ? "Switch account" : "Log in / Sign up"}
-          </Link>
+          {isSignedIn ? (
+            <>
+              <button
+                type="button"
+                onClick={() => signOut({ redirectUrl: "/login" })}
+                className="btn btn-green w-full"
+              >
+                Switch account
+              </button>
+              <p className="mono-data text-[11px] text-faded mt-3">
+                This signs you out of the current account first.
+              </p>
+            </>
+          ) : (
+            <Link to="/login" className="btn btn-green w-full">
+              Log in / Sign up
+            </Link>
+          )}
         </div>
       </div>
     );

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { X } from "lucide-react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useClerk } from "@clerk/clerk-react";
 import { useRole } from "../src/lib/role.js";
 import { pgApi, ApiError } from "../src/lib/api.js";
 import { uploadImage } from "../src/lib/cloudinary.js";
@@ -46,6 +46,7 @@ export default function EditPG() {
   const navigate = useNavigate();
   const { isSignedIn } = useAuth();
   const { isOwner } = useRole();
+  const { signOut } = useClerk();
 
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -179,10 +180,29 @@ export default function EditPG() {
           <span className="tape" aria-hidden="true" />
           <p className="mono-label text-faded mb-2">Owners only</p>
           <h2 className="disp text-3xl mb-3">You can&rsquo;t correct someone else&rsquo;s flyer.</h2>
-          <p className="text-faded mb-7 text-sm">Log in as a PG owner to edit listings.</p>
-          <Link to="/login" className="btn btn-green w-full">
-            Log in / Sign up
-          </Link>
+          <p className="text-faded mb-7 text-sm">
+            {isSignedIn
+              ? "Your account isn't a PG-owner account."
+              : "Log in as a PG owner to edit listings."}
+          </p>
+          {isSignedIn ? (
+            <>
+              <button
+                type="button"
+                onClick={() => signOut({ redirectUrl: "/login" })}
+                className="btn btn-green w-full"
+              >
+                Switch account
+              </button>
+              <p className="mono-data text-[11px] text-faded mt-3">
+                This signs you out of the current account first.
+              </p>
+            </>
+          ) : (
+            <Link to="/login" className="btn btn-green w-full">
+              Log in / Sign up
+            </Link>
+          )}
         </div>
       </div>
     );

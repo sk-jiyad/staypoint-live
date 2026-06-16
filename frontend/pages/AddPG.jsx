@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { Upload, ChevronDown, X } from "lucide-react"
-import { useAuth } from "@clerk/clerk-react"
+import { useAuth, useClerk } from "@clerk/clerk-react"
 import { useRole } from "../src/lib/role.js"
 import { pgApi, ApiError } from "../src/lib/api.js"
 import { uploadImage } from "../src/lib/cloudinary.js"
@@ -15,6 +15,7 @@ export default function AddPG() {
   const navigate = useNavigate()
   const { isSignedIn } = useAuth()
   const { isOwner } = useRole()
+  const { signOut } = useClerk()
 
   const [step, setStep] = useState(1)
   const [submitted, setSubmitted] = useState(false)
@@ -143,9 +144,24 @@ export default function AddPG() {
               ? "Your account isn't a PG-owner account, so you can't paste a flyer."
               : "Log in as a PG owner to paste your flyer on the board."}
           </p>
-          <Link to="/login" className="btn btn-green w-full">
-            {isSignedIn ? "Switch account" : "Log in / Sign up"}
-          </Link>
+          {isSignedIn ? (
+            <>
+              <button
+                type="button"
+                onClick={() => signOut({ redirectUrl: "/login" })}
+                className="btn btn-green w-full"
+              >
+                Switch account
+              </button>
+              <p className="mono-data text-[11px] text-faded mt-3">
+                This signs you out of the current account first.
+              </p>
+            </>
+          ) : (
+            <Link to="/login" className="btn btn-green w-full">
+              Log in / Sign up
+            </Link>
+          )}
         </div>
       </div>
     )
