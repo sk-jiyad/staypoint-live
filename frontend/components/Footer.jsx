@@ -62,7 +62,7 @@ export default function Footer() {
 
       {/* the page itself ends in tear-off tabs */}
       <div className="bg-flyer text-ink">
-        <TearStrip text="staypoint · find a room" count={8} tornAt={5} />
+        <TearStrip text="staypoint · find a room" count={8} tornAt={5} ambient />
       </div>
     </footer>
   )

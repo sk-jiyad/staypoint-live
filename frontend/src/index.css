@@ -497,6 +497,26 @@
         rotate: 14deg;
       }
     }
+
+    /* ambient flutter: footer tabs sway gently like paper in a breeze (opt-in via
+       .is-ambient). Animates `transform` so it composes with the tabs' rotate/translate
+       longhands (--tab-tilt + hover-peel). Tabs are desynced so they don't move in unison. */
+    .tear-strip.is-ambient .tear-tab {
+      transform-origin: top center;
+      animation: tab-flutter 3.4s ease-in-out infinite;
+    }
+    .tear-strip.is-ambient .tear-tab:nth-child(even) {
+      animation-duration: 4.1s;
+      animation-delay: -1.2s;
+    }
+    .tear-strip.is-ambient .tear-tab:nth-child(3n) {
+      animation-duration: 3.8s;
+      animation-delay: -2.4s;
+    }
+    @keyframes tab-flutter {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50%      { transform: translateY(-2px) rotate(0.8deg); }
+    }
   }
 }
 

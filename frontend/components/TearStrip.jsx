@@ -11,15 +11,16 @@ import { Link } from "react-router-dom";
  *  - tornAt: index of the missing tab; pass -1 for none (default derived from text)
  *  - to:     optional route — wraps the strip in a Link
  *  - label:  accessible label when the strip is a link
+ *  - ambient: when true, tabs gently sway on their own (decorative; footer only)
  */
-export default function TearStrip({ text, count = 6, tornAt, to, label }) {
+export default function TearStrip({ text, count = 6, tornAt, to, label, ambient = false }) {
   const torn =
     tornAt !== undefined
       ? tornAt
       : Math.abs([...String(text)].reduce((a, c) => a + c.charCodeAt(0), 0)) % count;
 
   const strip = (
-    <div className="tear-strip" aria-hidden={to ? undefined : true}>
+    <div className={"tear-strip" + (ambient ? " is-ambient" : "")} aria-hidden={to ? undefined : true}>
       {Array.from({ length: count }, (_, i) => (
         <span key={i} className="tear-tab" data-torn={i === torn}>
           {text}
