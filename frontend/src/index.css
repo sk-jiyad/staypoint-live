@@ -498,25 +498,19 @@
       }
     }
 
-    /* ambient flutter: footer tabs sway gently like paper in a breeze (opt-in via
-       .is-ambient). Animates `transform` so it composes with the tabs' rotate/translate
-       longhands (--tab-tilt + hover-peel). Tabs are desynced so they don't move in unison. */
-    .tear-strip.is-ambient .tear-tab {
-      transform-origin: top center;
-      animation: tab-flutter 3.4s ease-in-out infinite;
+    /* a tab growing back after it was torn off (click-to-tear, footer strip) */
+    .tear-tab.growing {
+      animation: tear-grow 0.45s ease-out;
     }
-    .tear-strip.is-ambient .tear-tab:nth-child(even) {
-      animation-duration: 4.1s;
-      animation-delay: -1.2s;
+    @keyframes tear-grow {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    .tear-strip.is-ambient .tear-tab:nth-child(3n) {
-      animation-duration: 3.8s;
-      animation-delay: -2.4s;
-    }
-    @keyframes tab-flutter {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50%      { transform: translateY(-2px) rotate(0.8deg); }
-    }
+  }
+
+  /* tearable footer tabs invite a click (works regardless of motion preference) */
+  .tear-strip.is-tearable .tear-tab {
+    cursor: pointer;
   }
 }
 
