@@ -7,7 +7,7 @@ import { useAuth } from "@clerk/clerk-react"
 import { useRole } from "../src/lib/role.js"
 import { pgApi, ApiError } from "../src/lib/api.js"
 import { uploadImage } from "../src/lib/cloudinary.js"
-import { COLLEGES } from "../src/lib/colleges.js"
+import CollegeField from "../components/CollegeField.jsx"
 
 const STEPS = ["Basics", "Rooms & rent", "Amenities", "Photos", "Owner"]
 
@@ -227,21 +227,10 @@ export default function AddPG() {
               </div>
               <div>
                 <label htmlFor="college" className="label">Nearby college (optional)</label>
-                <input
-                  id="college"
-                  name="college"
-                  list="india-colleges"
-                  autoComplete="off"
-                  placeholder="Search or type your college…"
+                <CollegeField
                   value={formData.college}
-                  onChange={handleInputChange}
-                  className="field"
+                  onChange={(v) => setFormData((f) => ({ ...f, college: v }))}
                 />
-                <datalist id="india-colleges">
-                  {COLLEGES.map((c) => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
               </div>
             </fieldset>
           )}
