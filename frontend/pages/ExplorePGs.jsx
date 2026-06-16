@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import TearStrip from "../components/TearStrip.jsx";
 import { useReveal } from "../src/lib/useReveal.js";
 import { pgApi, ApiError } from "../src/lib/api.js";
+import { COLLEGES } from "../src/lib/colleges.js";
 
 const inr = (n) => Number(n).toLocaleString("en-IN");
 
@@ -139,7 +140,7 @@ export default function ExplorePGs() {
   }, [pgs, searchTerm, rentMax, gender, vacancyOnly, college, sortBy]);
 
   const colleges = useMemo(
-    () => [...new Set(pgs.map((p) => p.nearbyCollege).filter(Boolean))].sort(),
+    () => [...new Set([...pgs.map((p) => p.nearbyCollege).filter(Boolean), ...COLLEGES])].sort(),
     [pgs]
   );
 
