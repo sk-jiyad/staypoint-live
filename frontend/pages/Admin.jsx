@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, ShieldOff, Trash2 } from "lucide-react";
+import { ShieldCheck, ShieldOff, Trash2, Eye, EyeOff, Snowflake } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
 import { useRole } from "../src/lib/role.js";
 import { adminApi, ApiError } from "../src/lib/api.js";
@@ -16,13 +16,15 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const [frozen, setFrozen] = useState(false);
+  const [freezeBusy, setFreezeBusy] = useState(false);
 
   const load = () => {
     setLoading(true);
-    adminApi
-      .listPGs()
-      .then((data) => {
+    Promise.all([adminApi.listPGs(), adminApi.getSettings()])
+      .then(([data, settings]) => {
         setPgs(data);
+        setFrozen(Boolean(settings.uploadsFrozen));
         setError("");
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Could not load listings."))
@@ -54,6 +56,26 @@ export default function Admin() {
     }
   };
 
+  const toggleHide = async (pg) => {
+    setBusyId(pg.id);
+    try {
+      await adminApi.setHidden(pg.id, !pg.hidden);
+      load();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const toggleFreeze = async () => {
+    setFreezeBusy(true);
+    try {
+      await adminApi.setUploadsFrozen(!frozen);
+      load();
+    } finally {
+      setFreezeBusy(false);
+    }
+  };
+
   if (!isSignedIn || !isAdmin) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4">
@@ -74,7 +96,24 @@ export default function Admin() {
       <div className="mb-8">
         <p className="mono-label text-green-deep mb-2">Caretaker's desk</p>
         <h1 className="disp text-5xl">Manage the board</h1>
-        <p className="text-faded text-sm mt-2">Stamp trustworthy flyers as verified, or tear down ones that break the rules.</p>
+        <p className="text-faded text-sm mt-2">Stamp trustworthy flyers as verified, hide ones that break the rules, or freeze new uploads.</p>
+      </div>
+
+      {/* Freeze new uploads */}
+      <div className="flex flex-wrap items-center gap-3 mb-8">
+        <button
+          onClick={toggleFreeze}
+          disabled={freezeBusy}
+          className={(frozen ? "btn btn-ink" : "btn") + " !py-2 !px-4 inline-flex items-center gap-2"}
+        >
+          <Snowflake size={15} />
+          {frozen ? "Freeze: ON" : "Freeze new uploads: OFF"}
+        </button>
+        <span className="mono-data text-sm text-faded">
+          {frozen
+            ? "New uploads are held (hidden) until you turn this off."
+            : "New uploads go live immediately."}
+        </span>
       </div>
 
       {loading && <p className="mono-label text-faded">Reading the board…</p>}
@@ -97,9 +136,13 @@ export default function Admin() {
               {pgs.map((pg) => (
                 <tr key={pg.id} className="border-b-2 border-dashed border-ink/30">
                   <td className="px-4 py-3">
-                    <Link to={`/pg/${pg.id}`} className="disp text-lg text-ink hover:text-green-deep no-underline">
-                      {pg.name}
-                    </Link>
+                    {pg.hidden || pg.frozen ? (
+                      <span className="disp text-lg text-ink">{pg.name}</span>
+                    ) : (
+                      <Link to={`/pg/${pg.id}`} className="disp text-lg text-ink hover:text-green-deep no-underline">
+                        {pg.name}
+                      </Link>
+                    )}
                     <p className="mono-data text-xs text-faded line-clamp-1">{pg.address}</p>
                   </td>
                   <td className="px-4 py-3 mono-data text-sm">₹{inr(pg.rentSingle)}</td>
@@ -108,11 +151,12 @@ export default function Admin() {
                     {pg.avgRating != null ? `★ ${pg.avgRating.toFixed(1)} (${pg.reviewCount || 0})` : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    {pg.verified ? (
-                      <span className="mono-label text-green-deep">Verified</span>
-                    ) : (
-                      <span className="mono-label text-faded">Unverified</span>
-                    )}
+                    <div className="flex flex-col gap-0.5">
+                      {pg.verified && <span className="mono-label text-green-deep">Verified</span>}
+                      {pg.hidden && <span className="mono-label text-red">Hidden</span>}
+                      {pg.frozen && <span className="mono-label text-amber">Frozen (new)</span>}
+                      {!pg.verified && !pg.hidden && !pg.frozen && <span className="mono-label text-faded">Live</span>}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
@@ -123,6 +167,14 @@ export default function Admin() {
                       >
                         {pg.verified ? <ShieldOff size={14} /> : <ShieldCheck size={14} />}
                         {pg.verified ? "Unverify" : "Verify"}
+                      </button>
+                      <button
+                        onClick={() => toggleHide(pg)}
+                        disabled={busyId === pg.id}
+                        className="btn !py-1.5 !px-3 inline-flex items-center gap-1"
+                      >
+                        {pg.hidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                        {pg.hidden ? "Show" : "Hide"}
                       </button>
                       <button
                         onClick={() => remove(pg)}
