@@ -189,6 +189,12 @@ export default function MyListings() {
                     </div>
                     <p className="text-faded text-sm mb-3 line-clamp-2">{pg.address}</p>
 
+                    {pg.frozen && (
+                      <p className="mono-label text-ink bg-tape border-2 border-ink px-2 py-1 mb-3 inline-block">
+                        Pending review — not public yet
+                      </p>
+                    )}
+
                     <p className="mb-5">
                       <span className="disp text-3xl">₹{inr(pg.rentSingle)}</span>
                       <span className="mono-label text-faded ml-2">/mo single</span>
